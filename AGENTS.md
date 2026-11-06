@@ -30,7 +30,7 @@ Proofline is a human-verified, performance-based creator rewards marketplace on 
 - World ID issuer https://auth.world.org; the callback path is exactly `/api/auth/world/callback`.
 
 ### Deployments (Arc Testnet)
-- ProoflineCampaigns (simulation: MockKeystoneForwarder, `allowAnyWorkflow=true`): 0xba639d505096fcc005b51ae34f84ee1164068343, deployed 2026-11-06 in block 71066818 (tx 0x015ab507c2d9106f643e1e6d1541528397992c3aef7ae1c95b1b47bbdbd9b98f, metadata `contracts/contract-metadata/ProoflineCampaigns.json`). Owner 0xf7d4041e751E0b4f6eA72Eb82F2b200D278704A4 (the user's wallet). Campaigns need the owner to call `setReportSigner` first (the Admin page does it); the signer address is `VITE_PROOFLINE_REPORT_SIGNER`.
+- ProoflineCampaigns (simulation: MockKeystoneForwarder, `allowAnyWorkflow=true`): 0x433920fdc403317005eb8c5dcf9a43a153243528, deployed 2026-11-06 in block 71078006 (tx 0x156b8c577d12daebbe1813732ae3affffc1a2fbb354480a67edb985760614db2, metadata `contracts/contract-metadata/ProoflineCampaigns.json`). Each campaign stores a brand-chosen `requireProofCode` flag (enforced by the workflow, not the contract). Owner 0xf7d4041e751E0b4f6eA72Eb82F2b200D278704A4 (the user's wallet). Campaigns need the owner to call `setReportSigner` first (the Admin page does it); the signer address is `VITE_PROOFLINE_REPORT_SIGNER`. Superseded: 0xba639d505096fcc005b51ae34f84ee1164068343 (same contract without the flag, never used).
 - The workflow is NOT deployed (needs CRE Early Access). The simulation forwarder is public, so rewards are protected by the report-signer signature, and the owner is trusted until `lockWorkflowIdentity`.
 - Older contracts from the earlier demo (ArcClaimReceiver) are superseded and not used.
 

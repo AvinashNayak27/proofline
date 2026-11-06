@@ -8,7 +8,7 @@ import type { Address } from 'viem'
 /** The creator's one code for this campaign, plus a ready-to-edit post. */
 export function ProofCodeCard({ campaign, wallet }: { campaign: Campaign; wallet: Address }) {
   const code = proofCode(campaign.id, wallet)
-  const draft = [`Proud to partner with ${campaign.brandName || 'this brand'}: ${campaign.title}`, campaign.requiredTag, code]
+  const draft = [`Proud to partner with ${campaign.brandName || 'this brand'}: ${campaign.title}`, campaign.requiredTag, campaign.requireProofCode ? code : '']
     .filter(Boolean)
     .join(' ')
   const copy = async (text: string, what: string) => {
@@ -18,6 +18,21 @@ export function ProofCodeCard({ campaign, wallet }: { campaign: Campaign; wallet
     } catch {
       toast.error('Copy failed. Select the text and copy it by hand.')
     }
+  }
+  if (!campaign.requireProofCode) {
+    return (
+      <div className="space-y-3">
+        <p className="text-pretty text-sm" style={{ color: 'var(--muted)' }}>
+          Publish a video post on X{campaign.requiredTag ? <> that includes <span className="mono">{campaign.requiredTag}</span></> : null}. No code is needed for this setup.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" small onClick={() => void copy(draft, 'Draft post')}>Copy a draft post</Button>
+          <ExternalButton small href={`https://x.com/intent/post?text=${encodeURIComponent(draft)}`} icon={<ExternalLink className="size-4" aria-hidden />}>
+            Open in X
+          </ExternalButton>
+        </div>
+      </div>
+    )
   }
   return (
     <div className="space-y-3">

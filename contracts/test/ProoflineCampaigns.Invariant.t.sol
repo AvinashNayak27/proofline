@@ -73,6 +73,7 @@ contract ProoflineCampaignsHandler is Test {
         if (campaignCount >= MAX_CAMPAIGNS) return;
         ProoflineCampaigns.CampaignInput memory i;
         i.title = "t";
+        i.requireProofCode = ((cpm ^ dur ^ brandSeed) & 1) == 0; // flag must never affect accounting
         i.cpmUsdc6 = uint96(bound(cpm, 1, 5_000_000));
         i.bonusBps = uint16(bound(bps, 0, 10_000));
         i.minViews = uint32(bound(minViews, 0, 2000));

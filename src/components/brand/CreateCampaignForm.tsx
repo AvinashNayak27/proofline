@@ -74,6 +74,20 @@ export function CreateCampaignForm() {
             <TextField label="Required tag (optional)" value={values.requiredTag} onChange={set('requiredTag')} error={errors.requiredTag} placeholder="#AcmeSummer" hint="Posts must include this exact text." autoCapitalize="off" />
             <TextField label="Brand link (optional)" value={values.link} onChange={set('link')} error={errors.link} placeholder="https://acme.example" inputMode="url" />
           </div>
+          <label className="pl-inner flex min-h-11 cursor-pointer items-start gap-3 px-4 py-3">
+            <input
+              type="checkbox"
+              className="mt-1 size-5 shrink-0 accent-[var(--accent)]"
+              checked={values.requireProofCode}
+              onChange={(e) => setValues((prev) => ({ ...prev, requireProofCode: e.target.checked }))}
+            />
+            <span>
+              <span className="block text-sm font-semibold">Require each creator's Proofline code in the post</span>
+              <span className="block text-sm" style={{ color: 'var(--muted)' }}>
+                On: a post only pays if it contains the creator's personal code, which ties it to this campaign and their wallet. Off: creators can post freely, and only your required tag (if any) is checked. You can't change this after launch.
+              </span>
+            </span>
+          </label>
         </section>
 
         <section className="pl-card space-y-4 p-6">

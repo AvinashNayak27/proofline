@@ -26,6 +26,7 @@ export function RuleSummary({ campaign: c }: { campaign: Campaign }) {
         <Usdc amount={c.maxPerCreator} />
       </Row>
       <Row label="Minimum views">{c.minViews === 0 ? 'None' : `${count(c.minViews)} unique views`}</Row>
+      <Row label="Proofline code in post">{c.requireProofCode ? 'Required' : 'Not required'}</Row>
       {c.requiredTag ? <Row label="Required in your post"><span className="mono">{c.requiredTag}</span></Row> : null}
     </dl>
   )

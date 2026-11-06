@@ -10,7 +10,7 @@ import { decodeFunctionResult, encodeFunctionData, parseAbi, zeroAddress, type A
 import type { Config } from './config'
 
 export const readAbi = parseAbi([
-  'function getCampaign(uint256 id) view returns ((address brand, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint8 status, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator, uint128 deposited, uint128 paid, uint128 withdrawn))',
+  'function getCampaign(uint256 id) view returns ((address brand, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint8 status, bool requireProofCode, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator, uint128 deposited, uint128 paid, uint128 withdrawn))',
   'function postRewarded(bytes32 postKey) view returns (bool)',
   'function creatorPaid(uint256 campaignId, bytes32 creatorCommitment) view returns (uint256)',
   'function previewPayout(uint256 id, bytes32 creatorCommitment, uint256 uniqueViews, uint256 completions) view returns (uint256)',
@@ -26,6 +26,7 @@ export type CampaignState = {
   minViews: number
   bonusBps: number
   status: number
+  requireProofCode: boolean
   cpmUsdc6: bigint
   maxPerPost: bigint
   maxPerCreator: bigint

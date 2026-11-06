@@ -1,10 +1,10 @@
 import { parseAbi } from 'viem'
 
 const input =
-  '(string brandName, string title, string brief, string requiredTag, string link, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator)'
+  '(string brandName, string title, string brief, string requiredTag, string link, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator, bool requireProofCode)'
 
 export const campaignCreatedEvent = parseAbi([
-  'event CampaignCreated(uint256 indexed id, address indexed brand, (string brandName, string title, string brief, string requiredTag, string link, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator, uint256 deposit) data)',
+  'event CampaignCreated(uint256 indexed id, address indexed brand, (string brandName, string title, string brief, string requiredTag, string link, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator, bool requireProofCode, uint256 deposit) data)',
 ])[0]
 
 export const postRewardedEvent = parseAbi([
@@ -16,7 +16,7 @@ export const prooflineAbi = parseAbi([
   'function fund(uint256 id, uint256 amount)',
   'function setPaused(uint256 id, bool paused_)',
   'function close(uint256 id)',
-  'function getCampaign(uint256 id) view returns ((address brand, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint8 status, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator, uint128 deposited, uint128 paid, uint128 withdrawn))',
+  'function getCampaign(uint256 id) view returns ((address brand, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint8 status, bool requireProofCode, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator, uint128 deposited, uint128 paid, uint128 withdrawn))',
   'function remaining(uint256 id) view returns (uint256)',
   'function quote(uint256 id, uint256 uniqueViews, uint256 completions) view returns (uint256)',
   'function previewPayout(uint256 id, bytes32 creatorCommitment, uint256 uniqueViews, uint256 completions) view returns (uint256)',

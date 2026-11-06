@@ -14,11 +14,11 @@ export function syndicationUrl(postId: string): string {
   return `https://cdn.syndication.twimg.com/tweet-result?id=${postId}&lang=en&token=${syndicationToken(postId)}`
 }
 
-export type TweetExpectation = { postId: string; handle: string; campaignId: bigint; wallet: Address; requiredTag: string }
+export type TweetExpectation = { postId: string; handle: string; campaignId: bigint; wallet: Address; requiredTag: string; requireCode?: boolean }
 
 /**
  * Checks the public post: it is the submitted post, written by the submitted handle, and carries the
- * creator's Proofline code (and the campaign tag, when the campaign sets one). The analytics capture
+ * creator's Proofline code (unless requireCode is false) and the campaign tag, when the campaign sets one. The analytics capture
  * separately proves the submitter controls that account.
  */
 export function checkTweet(raw: unknown, e: TweetExpectation): 'ok' | TweetFailure {
@@ -26,7 +26,7 @@ export function checkTweet(raw: unknown, e: TweetExpectation): 'ok' | TweetFailu
   if (!t || typeof t.text !== 'string' || typeof t.id_str !== 'string') return 'tweet_unreadable'
   const author = t.user?.screen_name
   if (t.id_str !== e.postId || typeof author !== 'string' || author.toLowerCase() !== e.handle.toLowerCase()) return 'tweet_mismatch'
-  if (!textHasProofCode(t.text, e.campaignId, e.wallet)) return 'code_missing'
+  if (e.requireCode !== false && !textHasProofCode(t.text, e.campaignId, e.wallet)) return 'code_missing'
   if (e.requiredTag && !t.text.toLowerCase().includes(e.requiredTag.toLowerCase())) return 'tag_missing'
   return 'ok'
 }

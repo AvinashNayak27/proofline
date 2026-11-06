@@ -86,7 +86,7 @@ export function ParticipatePanel({ campaign }: { campaign: Campaign }) {
           )}
         </Step>
 
-        <Step n={3} title="Publish your post with your code" done={false} active={signedIn && walletReady}>
+        <Step n={3} title={campaign.requireProofCode ? 'Publish your post with your code' : 'Publish your post'} done={false} active={signedIn && walletReady}>
           {address ? <ProofCodeCard campaign={campaign} wallet={address} /> : null}
         </Step>
 
@@ -99,7 +99,7 @@ export function ParticipatePanel({ campaign }: { campaign: Campaign }) {
               value={link}
               onChange={(e) => setLink(e.target.value)}
               error={link && !linkOk ? 'Use the plain post link, like https://x.com/you/status/123, with nothing after the number.' : null}
-              hint="The post must be public, include your code, and be yours: Proofline reads its analytics from your own X session."
+              hint={campaign.requireProofCode ? 'The post must be public, include your code, and be yours: Proofline reads its analytics from your own X session.' : 'The post must be public and yours: Proofline reads its analytics from your own X session.'}
               disabled={busy}
               autoComplete="off"
               spellCheck={false}

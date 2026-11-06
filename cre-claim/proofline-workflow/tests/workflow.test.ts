@@ -161,6 +161,9 @@ describe('tweet check', () => {
     expect(checkTweet(tweet({ user: { screen_name: 'someone_else' } }), expectation)).toBe('tweet_mismatch')
     expect(checkTweet(tweet({ text: 'no code, #ProoflineDemo' }), expectation)).toBe('code_missing')
     expect(checkTweet(tweet({ text: `${proofCode(7n, WALLET)} but no tag` }), expectation)).toBe('tag_missing')
+    expect(checkTweet(tweet({ text: 'no code, #ProoflineDemo' }), { ...expectation, requireCode: false })).toBe('ok')
+    expect(checkTweet(tweet({ text: 'no code, no tag' }), { ...expectation, requireCode: false })).toBe('tag_missing')
+    expect(checkTweet(tweet({ user: { screen_name: 'someone_else' }, text: 'no code, #ProoflineDemo' }), { ...expectation, requireCode: false })).toBe('tweet_mismatch')
     expect(checkTweet(tweet({ text: `${proofCode(8n, WALLET)} #ProoflineDemo` }), expectation)).toBe('code_missing')
   })
   test('builds the public lookup URL', () => {

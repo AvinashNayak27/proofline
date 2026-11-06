@@ -17,6 +17,7 @@ export type CampaignMeta = {
   cpmUsdc6: bigint
   maxPerPost: bigint
   maxPerCreator: bigint
+  requireProofCode: boolean
   deposit: bigint
   txHash: Hex
 }
@@ -112,6 +113,7 @@ export async function fetchCampaigns(client: PublicClient, nowSec: number): Prom
         cpmUsdc6: BigInt(state.cpmUsdc6),
         maxPerPost: BigInt(state.maxPerPost),
         maxPerCreator: BigInt(state.maxPerCreator),
+        requireProofCode: state.requireProofCode,
         deposit: d.deposit,
         txHash: log.transactionHash,
       }

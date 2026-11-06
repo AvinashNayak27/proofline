@@ -13,6 +13,7 @@ export type FormValues = {
   maxPerPost: string
   maxPerCreator: string
   deposit: string
+  requireProofCode: boolean
 }
 
 export type FormErrors = Partial<Record<keyof FormValues, string>>
@@ -31,6 +32,7 @@ export type CampaignInput = {
   cpmUsdc6: bigint
   maxPerPost: bigint
   maxPerCreator: bigint
+  requireProofCode: boolean
 }
 
 export const DEFAULTS: FormValues = {
@@ -46,6 +48,7 @@ export const DEFAULTS: FormValues = {
   maxPerPost: '5.00',
   maxPerCreator: '10.00',
   deposit: '50.00',
+  requireProofCode: true,
 }
 
 const MAX_UINT96 = (1n << 96n) - 1n
@@ -113,6 +116,7 @@ export function validateForm(v: FormValues, nowSec: number): { ok: true; input: 
       cpmUsdc6: cpm,
       maxPerPost,
       maxPerCreator,
+      requireProofCode: v.requireProofCode,
     },
   }
 }

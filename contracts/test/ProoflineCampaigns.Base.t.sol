@@ -95,6 +95,7 @@ abstract contract ProoflineCampaignsTestBase is Test {
         i.cpmUsdc6 = 1_000_000;
         i.maxPerPost = 1_000_000_000_000;
         i.maxPerCreator = 1_000_000_000_000;
+        i.requireProofCode = true;
     }
 
     function _create(ProoflineCampaigns.CampaignInput memory i, uint256 dep) internal returns (uint256 id) {

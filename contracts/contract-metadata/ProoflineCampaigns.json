@@ -1,13 +1,20 @@
 {
-  "contractAddress": "0xba639d505096fcc005b51ae34f84ee1164068343",
+  "contractAddress": "0x433920fdc403317005eb8c5dcf9a43a153243528",
   "network": "ARC-TESTNET",
   "deployerWalletId": "3c2464b2-8369-52e2-a782-800bbeca5396",
   "contract_code_path": "/home/user/app/contracts/ProoflineCampaigns.sol",
   "contract_compiled_code_path": "/home/user/app/contracts/out/ProoflineCampaigns.sol/ProoflineCampaigns.json",
   "contract_network_and_links": {
-    "Arc Testnet": "https://explorer.testnet.arc.io/address/0xba639d505096fcc005b51ae34f84ee1164068343"
+    "Arc Testnet": "https://explorer.testnet.arc.io/address/0x433920fdc403317005eb8c5dcf9a43a153243528"
   },
   "contract_deployments": [
+    {
+      "chain": "Arc Testnet",
+      "address": "0x433920fdc403317005eb8c5dcf9a43a153243528",
+      "explorerUrl": "https://explorer.testnet.arc.io/address/0x433920fdc403317005eb8c5dcf9a43a153243528",
+      "txHash": "0x156b8c577d12daebbe1813732ae3affffc1a2fbb354480a67edb985760614db2",
+      "deployedAt": "2026-11-06T19:33:32.142Z"
+    },
     {
       "chain": "Arc Testnet",
       "address": "0xba639d505096fcc005b51ae34f84ee1164068343",
@@ -170,6 +177,11 @@
               "name": "maxPerCreator",
               "type": "uint96",
               "internalType": "uint96"
+            },
+            {
+              "name": "requireProofCode",
+              "type": "bool",
+              "internalType": "bool"
             }
           ]
         },
@@ -314,6 +326,11 @@
               "name": "status",
               "type": "uint8",
               "internalType": "enum ProoflineCampaigns.Status"
+            },
+            {
+              "name": "requireProofCode",
+              "type": "bool",
+              "internalType": "bool"
             },
             {
               "name": "cpmUsdc6",
@@ -809,6 +826,11 @@
               "name": "maxPerCreator",
               "type": "uint96",
               "internalType": "uint96"
+            },
+            {
+              "name": "requireProofCode",
+              "type": "bool",
+              "internalType": "bool"
             },
             {
               "name": "deposit",

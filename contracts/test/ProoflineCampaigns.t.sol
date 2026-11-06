@@ -179,6 +179,7 @@ contract ProoflineCampaignsTest is ProoflineCampaignsTestBase {
             cpmUsdc6: i.cpmUsdc6,
             maxPerPost: i.maxPerPost,
             maxPerCreator: i.maxPerCreator,
+            requireProofCode: i.requireProofCode,
             deposit: 5_000_000
         });
         vm.expectEmit(true, true, false, true, address(pc));

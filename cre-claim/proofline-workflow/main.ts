@@ -93,6 +93,7 @@ export const onClaim = (enclave: TeeRuntime<Config>, payload: HTTPPayload): stri
     campaignId: claim.campaignId,
     wallet: claim.wallet,
     requiredTag: claim.requiredTag,
+    requireCode: campaign ? campaign.requireProofCode : true,
   })
   if (tweet !== 'ok') return reject(tweet)
 

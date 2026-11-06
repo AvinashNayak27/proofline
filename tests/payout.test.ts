@@ -43,6 +43,12 @@ describe('campaign form validation', () => {
       expect(r.deposit).toBe(50_000_000n)
     }
   })
+  test('passes the proof-code choice through, requiring it by default', () => {
+    const on = validateForm(good, NOW)
+    const off = validateForm({ ...good, requireProofCode: false }, NOW)
+    expect(on.ok && on.input.requireProofCode).toBe(true)
+    expect(off.ok && off.input.requireProofCode).toBe(false)
+  })
   test('mirrors the contract rules', () => {
     const bad = (over: Partial<typeof good>) => {
       const r = validateForm({ ...good, ...over }, NOW)

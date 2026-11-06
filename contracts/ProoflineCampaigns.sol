@@ -44,7 +44,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
 
     enum Status { None, Active, Paused, Closed }
 
-    // Field order is intentional: preserve the requested packed campaign representation.
+    // Field order is intentional: requireProofCode follows status to preserve compact packing.
     struct Campaign {
         address brand;
         uint64 startsAt;
@@ -52,6 +52,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
         uint32 minViews;
         uint16 bonusBps;
         Status status;
+        bool requireProofCode;
         uint96 cpmUsdc6;
         uint96 maxPerPost;
         uint96 maxPerCreator;
@@ -73,6 +74,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
         uint96 cpmUsdc6;
         uint96 maxPerPost;
         uint96 maxPerCreator;
+        bool requireProofCode;
     }
 
     struct RewardReport {
@@ -98,6 +100,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
     /// cpmUsdc6: six-decimal USDC per 1,000 unique views.
     /// maxPerPost: maximum payout for one post, in USDC base units.
     /// maxPerCreator: lifetime campaign cap per creator commitment.
+    /// requireProofCode: brand's choice for whether posts must contain the creator's Proofline code; enforced off-chain by the CRE workflow, not by this contract.
     /// deposit: initial campaign escrow in USDC base units.
     struct CreationEventData {
         string brandName;
@@ -112,6 +115,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
         uint96 cpmUsdc6;
         uint96 maxPerPost;
         uint96 maxPerCreator;
+        bool requireProofCode;
         uint256 deposit;
     }
 
@@ -279,7 +283,8 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
     /// Reverts WorkflowIdentityNotLocked unless allowAnyWorkflow or the identity is locked.
     /// allowAnyWorkflow permits unlocked deposits ONLY in testnet mock-forwarder simulation mode,
     /// where reports still require signatures and the owner is trusted to change the signer before lock.
-    /// @param input Display metadata, effective dates and immutable campaign reward terms.
+    /// @param input Display metadata, effective dates, immutable reward terms and the brand's Proofline-code choice.
+    /// @dev requireProofCode is recorded only; the CRE workflow enforces it off-chain.
     /// @param deposit Nonzero initial USDC base units, bounded to uint128.
     /// @return id Newly allocated campaign identifier.
     function createCampaign(CampaignInput calldata input, uint256 deposit)
@@ -296,6 +301,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
         c.minViews = input.minViews;
         c.bonusBps = input.bonusBps;
         c.status = Status.Active;
+        c.requireProofCode = input.requireProofCode;
         c.cpmUsdc6 = input.cpmUsdc6;
         c.maxPerPost = input.maxPerPost;
         c.maxPerCreator = input.maxPerCreator;
@@ -361,7 +367,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
     /// @notice Returns all stored campaign terms and cumulative escrow accounting.
     /// @dev Reverts CampaignNotFound for an unknown identifier. Display text is in creation events.
     /// @param id Campaign identifier.
-    /// @return campaign Stored campaign, including its brand and status.
+    /// @return campaign Stored campaign, including its brand, status and off-chain-enforced requireProofCode choice.
     function getCampaign(uint256 id) external view returns (Campaign memory campaign) {
         return _campaign(id);
     }
@@ -621,6 +627,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
         data.cpmUsdc6 = input.cpmUsdc6;
         data.maxPerPost = input.maxPerPost;
         data.maxPerCreator = input.maxPerCreator;
+        data.requireProofCode = input.requireProofCode;
         data.deposit = deposit;
     }
 }
