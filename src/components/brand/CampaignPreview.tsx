@@ -12,6 +12,7 @@ export function CampaignPreview({ input, deposit, brand }: { input: CampaignInpu
     ...input,
     deposit,
     txHash: '0x',
+    createdBlock: 0n,
     status: 1,
     deposited: deposit,
     paid: 0n,

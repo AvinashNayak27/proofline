@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import type { Address, PublicClient } from 'viem'
 import { useReadContracts, usePublicClient } from 'wagmi'
@@ -27,10 +27,14 @@ export function useCampaign(id: bigint | null) {
 
 export function useRewards() {
   const client = usePublicClient({ chainId: CHAIN_ID }) as PublicClient | undefined
+  const campaigns = useCampaigns()
+  const list = campaigns.data
   return useQuery<Reward[]>({
-    queryKey: ['proofline', 'rewards'],
-    enabled: Boolean(client && PROOFLINE_CONTRACT),
-    queryFn: () => fetchRewards(client as PublicClient),
+    // Rewards are scanned per campaign, so they wait for the campaign list and refresh when it changes.
+    queryKey: ['proofline', 'rewards', list?.map((c) => `${c.id}:${c.paid}`).join(',') ?? ''],
+    enabled: Boolean(client && PROOFLINE_CONTRACT && list),
+    queryFn: () => fetchRewards(client as PublicClient, list as Campaign[]),
+    placeholderData: keepPreviousData,
     staleTime: FRESH_MS,
     refetchInterval: 30_000,
   })

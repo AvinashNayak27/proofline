@@ -1,14 +1,12 @@
 // Reads public Proofline campaign data from Arc Testnet for the server. Only the creation event
-// carries display text, so the campaign's required tag is looked up there (and cached: it never changes).
-import { createPublicClient, http, parseAbiItem, type Address } from 'viem'
+// carries display text, so the campaign's required tag is read from the block the campaign was created in
+// (found by bisection, never a history scan) and cached: it never changes.
+import { createPublicClient, http, type Address } from 'viem'
+import { findCreationBlock, readCreated } from '../src/lib/proofline/discovery'
 import { getChain } from '../src/onchain-facts'
 
 const ARC_TESTNET_ID = 5042002
 const ARC_TESTNET_PROXY_KEY = 'Arc_Testnet'
-
-const campaignCreated = parseAbiItem(
-  'event CampaignCreated(uint256 indexed id, address indexed brand, (string brandName, string title, string brief, string requiredTag, string link, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator, uint256 deposit) data)',
-)
 
 /** RPC endpoint: the per-chain override, the sandbox proxy when it covers Arc Testnet, else public RPC. */
 export function rpcUrl(env: NodeJS.ProcessEnv = process.env): string {
@@ -34,8 +32,9 @@ export async function requiredTagFor(contract: Address, deployBlock: bigint, cam
   const cached = tags.get(key)
   if (cached !== undefined) return cached
   const client = createPublicClient({ transport: http(rpcUrl()) })
-  const logs = await client.getLogs({ address: contract, event: campaignCreated, args: { id: campaignId }, fromBlock: deployBlock, toBlock: 'latest' })
-  const tag = logs[0]?.args.data?.requiredTag
+  const head = await client.getBlockNumber()
+  const block = await findCreationBlock(client, contract, campaignId, deployBlock, head)
+  const tag = (await readCreated(client, contract, campaignId, block)).args.data.requiredTag
   if (typeof tag !== 'string') throw new Error('campaign not found')
   tags.set(key, tag)
   return tag
