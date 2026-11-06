@@ -4,11 +4,12 @@ import path from 'path'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig(({ mode }) => {
-  // Server-side only (no VITE_ prefix): where /cre/trigger is forwarded.
+  // The auth server (server/index.ts) owns every secret. It handles World ID sign-in under /api/auth
+  // and forwards /cre/trigger to CRE_TRIGGER_URL, but only for a signed-in session:
   //  - default http://127.0.0.1:2000 is `cre workflow simulate --listen` (local simulation)
   //  - http://127.0.0.1:2001 is the signing relay in cre-claim/relay (deployed workflow)
   const env = loadEnv(mode, process.cwd(), '')
-  const creTrigger = env.CRE_TRIGGER_URL || 'http://127.0.0.1:2000'
+  const authServer = `http://127.0.0.1:${env.AUTH_SERVER_PORT || '3001'}`
 
   return {
     plugins: [react(), nodePolyfills()],
@@ -45,11 +46,8 @@ export default defineConfig(({ mode }) => {
       allowedHosts: true,
       cors: true,
       proxy: {
-        '/cre/trigger': {
-          target: creTrigger,
-          changeOrigin: true,
-          rewrite: () => '/trigger',
-        },
+        '/api/auth': { target: authServer, changeOrigin: true },
+        '/cre/trigger': { target: authServer, changeOrigin: true },
       },
     },
   }

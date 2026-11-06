@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "bun run ./server/index.ts",
+    "server:test": "bun test ./server",
     "deploy:self": "bun run ./scripts/self-deploy.ts",
     "compass:deploy": "bun run ./scripts/compass-deploy.ts",
     "fetch:abi": "bun run ./scripts/fetch-abi.ts",
@@ -38,6 +40,7 @@
     "clsx": "^2.1.1",
     "connectkit": "^1.9.2",
     "framer-motion": "^11.15.0",
+    "jose": "6.2.15",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

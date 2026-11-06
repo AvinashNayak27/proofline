@@ -17,6 +17,8 @@ Prerequisites: Bun, Foundry, and the CRE CLI (`cre`, logged in with `cre login`)
 ```bash
 bun install
 bun run dev              # app on http://localhost:5173
+bun run server           # sign-in and claim gate server (World ID), proxied by the dev server
+bun run server:test      # World ID sign-in tests
 bun run check            # lint and typecheck
 bun run contracts:build  # compile contracts
 bun run contracts:test   # contract unit tests
@@ -38,6 +40,10 @@ A deployed workflow only accepts requests signed by an authorized key. Run `bun 
 | Name | Purpose |
 | --- | --- |
 | `VITE_CLAIM_RECEIVER` | Optional. Deployed receiver contract address on Arc Testnet. Enables the live reward pool and payout confirmation. |
+| `WORLD_ID_CLIENT_ID`, `WORLD_ID_CLIENT_SECRET` | Required. Credentials of your World ID app from the developer portal. Server side only; never commit or share the secret. |
+| `WORLD_ID_REDIRECT_URI` | Required. Exact callback URL registered in the portal, ending in `/api/auth/world/callback`. The app returns to this URL's origin after sign-in. |
+| `WORLD_ID_SESSION_SECRET` | Required. Random string of at least 32 characters that signs the app session cookie. |
+| `AUTH_SERVER_PORT` | Optional. Port of the sign-in server. Defaults to 3001. |
 | `VITE_ENCLAVE_PUBLIC_KEY` | Required to claim. Public key of the CRE enclave (0x + 64 hex). The app encrypts the access token to it. Created by `make-enclave-key.ts`. |
 | `ENCLAVE_PRIVATE_KEY` | Workflow and bridge only. Private half of the enclave key, read by the CRE CLI during simulation. Never commit or share it. For a deployed workflow, upload it with `cre secrets create`. |
 | `CRE_TRIGGER_URL` | Optional. Where the dev server forwards `/cre/trigger`. Defaults to the local simulator on port 2000; use `http://127.0.0.1:2002` for the bridge or `http://127.0.0.1:2001` for the signing relay. |
@@ -47,6 +53,12 @@ A deployed workflow only accepts requests signed by an authorized key. Run `bun 
 | `CRE_WORKFLOW_ID` | Relay only. 64-character workflow ID printed on deploy. |
 | `RELAY_PORT` | Relay only. Defaults to 2001. |
 | `DUMMYJSON_USERNAME`, `DUMMYJSON_PASSWORD` | Only for `cre-claim/scripts/make-sim-payload.ts`, which builds a local test payload. |
+
+## World ID sign-in
+
+The app is gated by World ID (OIDC Authorization Code Flow with S256 PKCE). Only people with an Orb-verified World ID get in, and every sign-in asks them to authenticate again. Copy `.env.local.example` to `.env.local`, fill in the four `WORLD_ID_*` values, register `<your public origin>/api/auth/world/callback` as the redirect URL in the World ID developer portal, then run `bun run server` and `bun run dev`.
+
+Signing out ends this app's session only. World ID has no sign-out endpoint, so it does not end your World ID session.
 
 ## Privacy notes
 

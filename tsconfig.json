@@ -31,6 +31,7 @@
       ]
     }
   },
-  "include": ["src", "scripts"]
+  "include": ["src", "scripts", "server"],
+  "exclude": ["server/**/*.test.ts"]
 }
 

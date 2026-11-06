@@ -13,3 +13,7 @@ cre-claim/**/*.wasm
 contracts/out
 contracts/cache
 
+
+# Keep the placeholder env templates tracked (no real values in them)
+!.env.example
+!.env.local.example
