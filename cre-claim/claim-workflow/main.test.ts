@@ -4,6 +4,9 @@ import { decodeAbiParameters, hashTypedData, parseAbiParameters, toFunctionSelec
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 import { configSchema } from './src/config'
 import { decodeClaimedUserResult, encodeClaimedUserCall } from './src/preflight'
+import { enclavePublicKeyFromPrivate, openSessionMaterial, type SessionBinding } from './src/session'
+import { x25519 } from '@noble/curves/ed25519'
+import { bytesToHex } from 'viem'
 import {
   claimIntentDigest,
   claimTypedData,
@@ -16,11 +19,13 @@ import {
   weightToUsdc6,
 } from './src/intent'
 import * as browser from '../../src/lib/claimIntent'
+import { sealSessionMaterial } from '../../src/lib/sessionCrypto'
 
 const NONCE = `0x${'ab'.repeat(32)}` as Hex
 const EXPIRY = 1_900_000_000n
 const RECEIVER = '0x1111111111111111111111111111111111111111' as Address
 const FAKE_TOKEN = 'aaa.bbb.ccc'
+const ENVELOPE = `0x${'ab'.repeat(120)}` as Hex
 
 describe('typed data parity with the browser module', () => {
   test('identical digest and claimId', () => {
@@ -43,7 +48,7 @@ describe('signature verification', () => {
     expect(recoverSigner(claimIntentDigest(intent.wallet, NONCE, EXPIRY), signature)?.toLowerCase()).toBe(
       account.address.toLowerCase(),
     )
-    expect(verifyIntentSignature({ accessToken: FAKE_TOKEN, ...intent, signature })).toBe(true)
+    expect(verifyIntentSignature({ encryptedSessionMaterial: ENVELOPE, ...intent, signature })).toBe(true)
   })
 
   test('rejects a signature over a different expiry, nonce, or wallet', async () => {
@@ -51,7 +56,7 @@ describe('signature verification', () => {
     const other = privateKeyToAccount(generatePrivateKey())
     const intent = { wallet: account.address, nonce: NONCE, expiry: EXPIRY }
     const signature = await account.signTypedData(browser.buildTypedData(intent))
-    const base = { accessToken: FAKE_TOKEN, ...intent, signature }
+    const base = { encryptedSessionMaterial: ENVELOPE, ...intent, signature }
     expect(verifyIntentSignature({ ...base, expiry: EXPIRY + 1n })).toBe(false)
     expect(verifyIntentSignature({ ...base, nonce: `0x${'cd'.repeat(32)}` })).toBe(false)
     expect(verifyIntentSignature({ ...base, wallet: other.address })).toBe(false)
@@ -62,7 +67,7 @@ describe('signature verification', () => {
     const intent = { wallet: account.address, nonce: NONCE, expiry: EXPIRY }
     const typed = claimTypedData(intent.wallet, NONCE, EXPIRY)
     const signature = await account.signTypedData({ ...typed, domain: { ...typed.domain, chainId: 1 } })
-    expect(verifyIntentSignature({ accessToken: FAKE_TOKEN, ...intent, signature })).toBe(false)
+    expect(verifyIntentSignature({ encryptedSessionMaterial: ENVELOPE, ...intent, signature })).toBe(false)
   })
 
   test('malformed signatures never throw', () => {
@@ -72,7 +77,7 @@ describe('signature verification', () => {
 
 describe('request parsing', () => {
   const good = {
-    accessToken: FAKE_TOKEN,
+    encryptedSessionMaterial: `0x${'ab'.repeat(120)}`,
     wallet: '0x2222222222222222222222222222222222222222',
     nonce: NONCE,
     expiry: '1900000000',
@@ -85,7 +90,9 @@ describe('request parsing', () => {
     for (const bad of [
       { ...good, username: 'someone' },
       { ...good, expiry: 1900000000 },
-      { ...good, accessToken: 'not a jwt' },
+      { ...good, accessToken: FAKE_TOKEN },
+      { ...good, encryptedSessionMaterial: 'not hex' },
+      { ...good, encryptedSessionMaterial: `0x${'ab'.repeat(7000)}` },
       { ...good, wallet: '0x12' },
       { ...good, nonce: '0x12' },
       { ...good, signature: '0x12' },
@@ -122,6 +129,62 @@ describe('user commitment', () => {
     expect(computeUserCommitment(7n)).toBe(computeUserCommitment(7n))
     expect(computeUserCommitment(7n)).not.toBe(computeUserCommitment(8n))
     expect(computeUserCommitment(7n)).toMatch(/^0x[0-9a-f]{64}$/)
+  })
+})
+
+describe('encrypted session material', () => {
+  const privateKey = bytesToHex(x25519.utils.randomPrivateKey())
+  const publicKey = enclavePublicKeyFromPrivate(privateKey)
+  const wallet = '0x2222222222222222222222222222222222222222' as Address
+  const binding: SessionBinding & { chainId: number } = { wallet, nonce: NONCE, expiry: EXPIRY, chainId: 5042002 }
+  const seal = (token = FAKE_TOKEN) => sealSessionMaterial(token, publicKey, binding)
+
+  test('the enclave opens what the browser sealed', () => {
+    expect(openSessionMaterial(seal(), privateKey, binding)).toBe(FAKE_TOKEN)
+  })
+
+  test('the envelope never contains the readable token and differs on every seal', () => {
+    const a = seal()
+    expect(a).not.toContain(Buffer.from(FAKE_TOKEN).toString('hex'))
+    expect(a).not.toBe(seal())
+  })
+
+  test('another enclave key cannot open it', () => {
+    const other = bytesToHex(x25519.utils.randomPrivateKey())
+    expect(openSessionMaterial(seal(), other, binding)).toBeUndefined()
+  })
+
+  test('is bound to wallet, nonce, expiry and chain', () => {
+    const envelope = seal()
+    expect(openSessionMaterial(envelope, privateKey, { ...binding, wallet: '0x3333333333333333333333333333333333333333' })).toBeUndefined()
+    expect(openSessionMaterial(envelope, privateKey, { ...binding, nonce: `0x${'cd'.repeat(32)}` })).toBeUndefined()
+    expect(openSessionMaterial(envelope, privateKey, { ...binding, expiry: EXPIRY + 1n })).toBeUndefined()
+    expect(openSessionMaterial(envelope, privateKey, { ...binding, chainId: 1 })).toBeUndefined()
+  })
+
+  test('tampered, truncated, wrong-version and malformed envelopes fail closed without throwing', () => {
+    const envelope = seal()
+    const flip = (i: number) => {
+      const bytes = Buffer.from(envelope.slice(2), 'hex')
+      bytes[i] = bytes[i] ^ 0x01
+      return `0x${bytes.toString('hex')}` as Hex
+    }
+    expect(openSessionMaterial(flip(0), privateKey, binding)).toBeUndefined() // version
+    expect(openSessionMaterial(flip(5), privateKey, binding)).toBeUndefined() // ephemeral key
+    expect(openSessionMaterial(flip(40), privateKey, binding)).toBeUndefined() // nonce
+    expect(openSessionMaterial(flip(Buffer.from(envelope.slice(2), 'hex').length - 1), privateKey, binding)).toBeUndefined() // tag
+    expect(openSessionMaterial(envelope.slice(0, 60) as Hex, privateKey, binding)).toBeUndefined()
+    expect(openSessionMaterial('0x' as Hex, privateKey, binding)).toBeUndefined()
+    expect(openSessionMaterial('zz' as Hex, privateKey, binding)).toBeUndefined()
+    expect(openSessionMaterial(envelope, '0x12' as Hex, binding)).toBeUndefined()
+  })
+
+  test('a fixed random source gives a stable envelope (format pin)', () => {
+    const fixed = (n: number) => new Uint8Array(n).fill(7)
+    const a = sealSessionMaterial(FAKE_TOKEN, publicKey, binding, fixed)
+    expect(a).toBe(sealSessionMaterial(FAKE_TOKEN, publicKey, binding, fixed))
+    expect(a.startsWith('0x01')).toBe(true)
+    expect(openSessionMaterial(a, privateKey, binding)).toBe(FAKE_TOKEN)
   })
 })
 

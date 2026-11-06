@@ -33,7 +33,8 @@ export async function loginToDummyJson(username: string, password: string): Prom
 }
 
 export type ClaimPayload = {
-  accessToken: string
+  /** Hex envelope from sealSessionMaterial. The readable access token is never sent. */
+  encryptedSessionMaterial: Hex
   wallet: string
   nonce: Hex
   expiry: string

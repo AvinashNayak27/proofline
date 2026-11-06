@@ -1,4 +1,4 @@
-import { HTTPClient, ok, text, type NodeRuntime } from '@chainlink/cre-sdk'
+import { HTTPClient, ok, text, type TeeRuntime } from '@chainlink/cre-sdk'
 import type { Config } from './config'
 import { weightToUsdc6 } from './intent'
 
@@ -12,17 +12,15 @@ import { weightToUsdc6 } from './intent'
 export type IdentityVerdict = string
 
 /**
- * Runs on every DON node: calls DummyJSON auth/me with the caller's bearer token and extracts the
- * authenticated user id and weight. Only the verdict above leaves this function. The raw response,
- * username and token are never logged, returned, or placed in an error message, so a node failure
- * surfaces a generic error only. The token DOES reach every node and the DummyJSON endpoint, and
- * DummyJSON access tokens are JWTs whose payload can carry identity claims, so identity is not
- * cryptographically hidden from the DON.
+ * Runs INSIDE the enclave: calls DummyJSON auth/me with the caller's bearer token and extracts the
+ * authenticated user id and weight. The token was decrypted in the enclave and the request is made
+ * from it, so no DON node sees the token. Only the verdict above leaves this function. The raw
+ * response, username and token are never logged, returned, or placed in an error message.
  */
-export const checkIdentity = (node: NodeRuntime<Config>, accessToken: string): IdentityVerdict => {
+export const checkIdentity = (enclave: TeeRuntime<Config>, accessToken: string): IdentityVerdict => {
   const response = new HTTPClient()
-    .sendRequest(node, {
-      url: node.config.authMeUrl,
+    .sendRequest(enclave, {
+      url: enclave.config.authMeUrl,
       method: 'GET',
       multiHeaders: {
         Authorization: { values: [`Bearer ${accessToken}`] },

@@ -23,7 +23,7 @@ import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-const ALLOWED_KEYS = ['accessToken', 'wallet', 'nonce', 'expiry', 'signature']
+const ALLOWED_KEYS = ['encryptedSessionMaterial', 'wallet', 'nonce', 'expiry', 'signature']
 const MAX_BODY_BYTES = 16 * 1024
 const RUN_TIMEOUT_MS = 120_000
 const RESULT_MARKER = 'Workflow Simulation Result:'

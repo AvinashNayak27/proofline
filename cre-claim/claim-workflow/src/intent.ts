@@ -13,6 +13,7 @@ import {
   type Address,
   type Hex,
 } from 'viem'
+import { ENVELOPE_RE, MAX_ENVELOPE_HEX_CHARS } from './session'
 
 export const APPLICATION = 'dummyjson-arc-claim-v1'
 export const ARC_TESTNET_CHAIN_ID = 5042002
@@ -36,7 +37,8 @@ export const CLAIM_TYPES = {
 } as const
 
 export type ClaimRequest = {
-  accessToken: string
+  /** Hex envelope from sealSessionMaterial: the access token, readable only inside the enclave. */
+  encryptedSessionMaterial: Hex
   wallet: Address
   nonce: Hex
   expiry: bigint
@@ -52,8 +54,8 @@ const BYTES32_RE = /^0x[0-9a-fA-F]{64}$/
 const SIGNATURE_RE = /^0x[0-9a-fA-F]{130}$/
 const EXPIRY_RE = /^[1-9][0-9]{0,11}$/
 // JWT-shaped bearer token (three base64url segments). DummyJSON access tokens are JWTs.
-const TOKEN_RE = /^[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{0,2048}$/
-const ALLOWED_KEYS = ['accessToken', 'wallet', 'nonce', 'expiry', 'signature']
+export const TOKEN_RE = /^[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{0,2048}$/
+const ALLOWED_KEYS = ['encryptedSessionMaterial', 'wallet', 'nonce', 'expiry', 'signature']
 
 /** Strictly validates the HTTP trigger body. Never echoes any input value in its result. */
 export function parseClaimRequest(raw: unknown): ParseResult {
@@ -63,8 +65,14 @@ export function parseClaimRequest(raw: unknown): ParseResult {
   const keys = Object.keys(body)
   if (keys.length !== ALLOWED_KEYS.length || !keys.every((k) => ALLOWED_KEYS.includes(k))) return bad
 
-  const { accessToken, wallet, nonce, expiry, signature } = body
-  if (typeof accessToken !== 'string' || !TOKEN_RE.test(accessToken)) return bad
+  const { encryptedSessionMaterial, wallet, nonce, expiry, signature } = body
+  if (
+    typeof encryptedSessionMaterial !== 'string' ||
+    encryptedSessionMaterial.length > MAX_ENVELOPE_HEX_CHARS ||
+    !ENVELOPE_RE.test(encryptedSessionMaterial)
+  ) {
+    return bad
+  }
   if (typeof wallet !== 'string' || !ADDRESS_RE.test(wallet)) return bad
   if (typeof nonce !== 'string' || !BYTES32_RE.test(nonce)) return bad
   if (typeof expiry !== 'string' || !EXPIRY_RE.test(expiry)) return bad
@@ -73,7 +81,7 @@ export function parseClaimRequest(raw: unknown): ParseResult {
   return {
     ok: true,
     value: {
-      accessToken,
+      encryptedSessionMaterial: encryptedSessionMaterial as Hex,
       wallet: wallet as Address,
       nonce: nonce as Hex,
       expiry: BigInt(expiry),

@@ -19,7 +19,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { parseSignature, type Hex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 
-const ALLOWED_KEYS = ['accessToken', 'wallet', 'nonce', 'expiry', 'signature']
+const ALLOWED_KEYS = ['encryptedSessionMaterial', 'wallet', 'nonce', 'expiry', 'signature']
 const MAX_BODY_BYTES = 16 * 1024
 
 /** JSON with keys sorted at every level and no whitespace, as the gateway digest requires. */

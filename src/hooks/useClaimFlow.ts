@@ -5,6 +5,7 @@ import type { Hex } from 'viem'
 import { buildTypedData, computeClaimId, newIntent } from '@/lib/claimIntent'
 import { ClaimApiError, loginToDummyJson, submitClaimToCre, type ApiFailure } from '@/lib/claimApi'
 import { CLAIM_RECEIVER, receiverAbi } from '@/lib/receiver'
+import { isEnclavePublicKey, sealSessionMaterial } from '@/lib/sessionCrypto'
 
 export type Phase =
   | { name: 'signed-out' }
@@ -25,6 +26,9 @@ const FAILURE_COPY: Record<ApiFailure, string> = {
   unexpected: 'Something went wrong. Please try again.',
 }
 
+const ENCLAVE_PUBLIC_KEY: unknown = import.meta.env.VITE_ENCLAVE_PUBLIC_KEY
+const NOT_CONFIGURED_COPY = 'Secure claiming is not set up yet: the enclave public key is missing from this app.'
+
 const POLL_MS = 3_000
 /** How long to wait for an onchain payout after the trigger accepted the claim. */
 const PAYOUT_WAIT_MS = 120_000
@@ -34,6 +38,7 @@ const REJECTION_COPY: Record<string, string> = {
   identity_unreadable: 'The DummyJSON profile could not be read. Try again.',
   already_claimed: 'This DummyJSON account has already claimed its reward. Each account can claim once.',
   delivery_reverted: 'The payout was not made. This account may already have claimed.',
+  session_unreadable: 'The secure session could not be opened. Sign in again and retry.',
   token_rejected: 'Your DummyJSON session was not accepted. Sign in again.',
   bad_signature: 'The wallet signature did not verify. Try again.',
   intent_expired: 'The claim expired before it was checked. Try again.',
@@ -80,6 +85,12 @@ export function useClaimFlow() {
   const claim = useCallback(async () => {
     const accessToken = tokenRef.current
     if (!accessToken || !address) return
+    const enclaveKey = ENCLAVE_PUBLIC_KEY
+    if (typeof enclaveKey !== 'string' || !isEnclavePublicKey(enclaveKey)) {
+      tokenRef.current = null
+      setPhase({ name: 'failed', message: NOT_CONFIGURED_COPY })
+      return
+    }
     try {
       if (chainId !== arcTestnet.id) await switchChainAsync({ chainId: arcTestnet.id })
       setPhase({ name: 'awaiting-signature' })
@@ -87,9 +98,12 @@ export function useClaimFlow() {
       const signature = await signTypedDataAsync(buildTypedData(intent))
 
       setPhase({ name: 'submitting' })
-      tokenRef.current = null // the token leaves memory as soon as it is handed to the request below
+      // The readable token never leaves the browser: it is encrypted to the enclave's public key,
+      // bound to this signed intent, and dropped from memory before the request is sent.
+      const encryptedSessionMaterial = sealSessionMaterial(accessToken, enclaveKey, intent)
+      tokenRef.current = null
       const receipt = await submitClaimToCre({
-        accessToken,
+        encryptedSessionMaterial,
         wallet: intent.wallet,
         nonce: intent.nonce,
         expiry: intent.expiry.toString(),
