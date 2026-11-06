@@ -12,7 +12,7 @@ export type Phase =
   | { name: 'signed-in' }
   | { name: 'awaiting-signature' }
   | { name: 'submitting' }
-  | { name: 'verifying'; claimId: Hex; expiry: bigint; startedAt: number }
+  | { name: 'verifying'; claimId: Hex; expiry: bigint; startedAt: number; reportTx: Hex | null }
   | { name: 'submitted' }
   | { name: 'paid'; txHash: Hex | null; amount: bigint | null }
   | { name: 'timed-out' }
@@ -32,6 +32,7 @@ const REJECTION_COPY: Record<string, string> = {
   weight_invalid: 'This account has no valid weight to reward.',
   amount_over_cap: 'The reward for this account is above the per-claim limit.',
   identity_unreadable: 'The DummyJSON profile could not be read. Try again.',
+  already_claimed: 'This DummyJSON account has already claimed its reward. Each account can claim once.',
   delivery_reverted: 'The payout was not made. This account may already have claimed.',
   token_rejected: 'Your DummyJSON session was not accepted. Sign in again.',
   bad_signature: 'The wallet signature did not verify. Try again.',
@@ -39,6 +40,9 @@ const REJECTION_COPY: Record<string, string> = {
   intent_expiry_too_far: 'The claim window was invalid. Try again.',
   invalid_request: 'The claim request was not valid. Try again.',
 }
+
+const ALREADY_CLAIMED_COPY =
+  'The payout was not made. This DummyJSON account has probably already claimed, since each account can claim once.'
 
 const LOG_LOOKBACK_BLOCKS = 5_000n
 
@@ -100,6 +104,7 @@ export function useClaimFlow() {
           claimId: computeClaimId(CLAIM_RECEIVER, intent),
           expiry: intent.expiry,
           startedAt: Date.now(),
+          reportTx: outcome?.txHash ?? null,
         })
       } else {
         setPhase({ name: 'submitted' })
@@ -125,7 +130,7 @@ export function useClaimFlow() {
   useEffect(() => {
     const receiver = CLAIM_RECEIVER
     if (!verifying || !receiver || !publicClient) return
-    const { claimId, expiry, startedAt } = verifying
+    const { claimId, expiry, startedAt, reportTx } = verifying
     const deadline = Math.min(Number(expiry) * 1000, startedAt + PAYOUT_WAIT_MS)
     let stopped = false
     const tick = async () => {
@@ -158,6 +163,25 @@ export function useClaimFlow() {
           }
           if (!stopped) setPhase({ name: 'paid', txHash, amount })
           return
+        }
+        // The report transaction is mined but the receiver never marked this claim paid: it rejected
+        // the report (a repeat claim by the same account is the usual cause). Say so right away.
+        if (reportTx) {
+          const mined = await publicClient.getTransactionReceipt({ hash: reportTx }).catch(() => null)
+          if (stopped) return
+          if (mined) {
+            const again = await publicClient.readContract({
+              address: receiver,
+              abi: receiverAbi,
+              functionName: 'claimed',
+              args: [claimId],
+            })
+            if (stopped) return
+            if (!again) {
+              setPhase({ name: 'failed', message: ALREADY_CLAIMED_COPY })
+              return
+            }
+          }
         }
       } catch {
         // transient RPC error: keep polling until the deadline

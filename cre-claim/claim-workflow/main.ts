@@ -15,6 +15,7 @@ import {
 import type { Address } from 'viem'
 import { configSchema, type Config } from './src/config'
 import { checkIdentity } from './src/identity'
+import { isUserAlreadyClaimed } from './src/preflight'
 import {
   computeClaimId,
   encodeClaimReport,
@@ -79,6 +80,14 @@ export const onClaim = (runtime: Runtime<Config>, payload: HTTPPayload): string 
     // Receiver-free branch: stops before report creation, EVM client construction or any write.
     runtime.log('local-simulation: verified, no report created and nothing written')
     return reply({ status: 'verified', mode: 'local-simulation', wouldWrite: 'true', ...summary })
+  }
+
+  // Preflight: read claimedUser(userCommitment) and reject known duplicates before any write.
+  // Only an explicit "false" lets the write proceed (a failed read throws). The receiver's
+  // UserAlreadyClaimed check remains the definitive guard against races and bypasses.
+  if (isUserAlreadyClaimed(runtime, config.receiver as Address, userCommitment)) {
+    runtime.log('preflight: user already claimed, not submitting')
+    return reject('already_claimed')
   }
 
   const network = getNetwork({ chainFamily: 'evm', chainSelectorName: config.chainSelectorName })

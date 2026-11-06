@@ -41,7 +41,7 @@ export type ClaimPayload = {
 }
 
 /** Coarse workflow result when the trigger endpoint reports one (the simulation bridge does). */
-export type ClaimOutcome = { status: string; reason?: string }
+export type ClaimOutcome = { status: string; reason?: string; txHash?: Hex }
 
 export type TriggerReceipt = { executionId?: string; outcome?: ClaimOutcome }
 
@@ -54,7 +54,11 @@ export async function submitClaimToCre(payload: ClaimPayload): Promise<TriggerRe
     const result = typeof body.result === 'object' && body.result !== null ? (body.result as Record<string, unknown>) : null
     const outcome: ClaimOutcome | undefined =
       result && typeof result.status === 'string'
-        ? { status: result.status, reason: typeof result.reason === 'string' ? result.reason : undefined }
+        ? {
+            status: result.status,
+            reason: typeof result.reason === 'string' ? result.reason : undefined,
+            txHash: typeof result.txHash === 'string' && /^0x[0-9a-fA-F]{64}$/.test(result.txHash) ? (result.txHash as Hex) : undefined,
+          }
         : undefined
     return { executionId: typeof body.executionId === 'string' ? body.executionId : undefined, outcome }
   } catch (err) {

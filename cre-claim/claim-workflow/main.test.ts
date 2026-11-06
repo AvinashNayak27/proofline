@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import { getNetwork } from '@chainlink/cre-sdk'
-import { decodeAbiParameters, hashTypedData, parseAbiParameters, type Address, type Hex } from 'viem'
+import { decodeAbiParameters, hashTypedData, parseAbiParameters, toFunctionSelector, type Address, type Hex } from 'viem'
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 import { configSchema } from './src/config'
+import { decodeClaimedUserResult, encodeClaimedUserCall } from './src/preflight'
 import {
   claimIntentDigest,
   claimTypedData,
@@ -121,6 +122,20 @@ describe('user commitment', () => {
     expect(computeUserCommitment(7n)).toBe(computeUserCommitment(7n))
     expect(computeUserCommitment(7n)).not.toBe(computeUserCommitment(8n))
     expect(computeUserCommitment(7n)).toMatch(/^0x[0-9a-f]{64}$/)
+  })
+})
+
+describe('duplicate preflight (claimedUser)', () => {
+  test('encodes claimedUser(bytes32) call data with the right selector', () => {
+    const commitment = computeUserCommitment(5n)
+    const data = encodeClaimedUserCall(commitment)
+    expect(data).toBe(`${toFunctionSelector('claimedUser(bytes32)')}${commitment.slice(2)}`)
+  })
+
+  test('decodes true and false and rejects malformed return data', () => {
+    expect(decodeClaimedUserResult(`0x${'00'.repeat(31)}01`)).toBe(true)
+    expect(decodeClaimedUserResult(`0x${'00'.repeat(32)}`)).toBe(false)
+    expect(() => decodeClaimedUserResult('0x')).toThrow()
   })
 })
 
