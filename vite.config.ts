@@ -47,6 +47,7 @@ export default defineConfig(({ mode }) => {
       cors: true,
       proxy: {
         '/api/auth': { target: authServer, changeOrigin: true },
+        '/api/claims': { target: authServer, changeOrigin: true },
         '/cre/trigger': { target: authServer, changeOrigin: true },
       },
     },

@@ -86,7 +86,7 @@ export function ParticipatePanel({ campaign }: { campaign: Campaign }) {
           )}
         </Step>
 
-        <Step n={3} title={campaign.requireProofCode ? 'Publish your post with your code' : 'Publish your post'} done={false} active={signedIn && walletReady}>
+        <Step n={3} title={campaign.requireProofCode ? 'Publish your post with your code' : 'Publish your post — no code required'} done={false} active={signedIn && walletReady}>
           {address ? <ProofCodeCard campaign={campaign} wallet={address} /> : null}
         </Step>
 
