@@ -1,0 +1,14 @@
+{
+  "mode": "production",
+  "application": "dummyjson-arc-claim-v1",
+  "chainId": 5042002,
+  "chainSelectorName": "arc-testnet",
+  "authMeUrl": "https://dummyjson.com/auth/me",
+  "maxClaimAmountUsdc6": "5000000",
+  "maxIntentTtlSeconds": 900,
+  "authorizedKeys": [
+    "0x590fBa6FD33a604e00289299348F2C4A1CB978a5"
+  ],
+  "receiver": "0x4723ddaf8c63fc58d304cdb84f1c5890233642af",
+  "gasLimit": "300000"
+}

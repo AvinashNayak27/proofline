@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+.env.*
+*.env
+recovery_file*
+.circle/
+traces.jsonl
+console.jsonl
+cre-claim/payloads/
+cre-claim/**/.cre_build_tmp.js
+cre-claim/**/*.wasm
+contracts/out
+contracts/cache
+

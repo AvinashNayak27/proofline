@@ -1,0 +1,10 @@
+{
+  "mode": "local-simulation",
+  "application": "dummyjson-arc-claim-v1",
+  "chainId": 5042002,
+  "chainSelectorName": "arc-testnet",
+  "authMeUrl": "https://dummyjson.com/auth/me",
+  "maxClaimAmountUsdc6": "5000000",
+  "maxIntentTtlSeconds": 900,
+  "authorizedKeys": []
+}
