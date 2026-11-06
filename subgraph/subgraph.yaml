@@ -8,9 +8,9 @@ dataSources:
     name: ProoflineCampaigns
     network: arc-testnet
     source:
-      address: "0x433920fdc403317005eb8c5dcf9a43a153243528"
+      address: "0x3b43a325b5a97c1c8c75c8346533db30432b7dd6"
       abi: ProoflineCampaigns
-      startBlock: 71078006
+      startBlock: 71097355
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
