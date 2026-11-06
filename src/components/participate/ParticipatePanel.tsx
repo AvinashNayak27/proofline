@@ -1,6 +1,7 @@
 import { ConnectKitButton } from 'connectkit'
 import { Check, Fingerprint, Loader2, Wallet } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/Field'
@@ -36,11 +37,15 @@ function Step({ n, title, done, active, children }: { n: number; title: string; 
 
 /** Earn from a campaign: verify you are human, connect a wallet, post with your code, submit the link. */
 export function ParticipatePanel({ campaign }: { campaign: Campaign }) {
+  const [searchParams] = useSearchParams()
   const { session } = useWorldSession()
   const { begin, href, waiting } = useWorldSignIn()
   const { address, isConnected } = useAccount()
   const { phase, submit, reset, busy } = useClaim(campaign.id)
-  const [link, setLink] = useState('')
+  const [link, setLink] = useState(() => {
+    const post = searchParams.get('post') ?? ''
+    return post.length <= 256 && parsePostUrl(post) ? post : ''
+  })
 
   const signedIn = session.status === 'signed-in'
   const worldAvailable = session.status === 'signed-out' ? session.configured : session.status !== 'unreachable'

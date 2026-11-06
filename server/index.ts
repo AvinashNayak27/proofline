@@ -129,7 +129,9 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === '/api/auth/world/login' && method === 'GET') {
     if (!state.ok) return send(res, 503, { error: 'not_configured', variables: state.variables })
     try {
-      const { location, setCookies } = await state.auth.startLogin()
+      const requestedReturn = url.searchParams.get('return_to') ?? '/'
+      const returnTo = requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') && requestedReturn.length <= 1024 ? requestedReturn : '/'
+      const { location, setCookies } = await state.auth.startLogin(returnTo)
       return redirect(res, location, setCookies)
     } catch {
       const code: AuthErrorCode = 'service_unavailable'

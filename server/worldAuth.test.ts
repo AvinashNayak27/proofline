@@ -170,7 +170,7 @@ describe('authorization request', () => {
 
   test('stores attempt data only in short-lived HttpOnly, Secure, SameSite=Lax cookies', async () => {
     const { setCookies } = await begin(await harness())
-    expect(setCookies).toHaveLength(4)
+    expect(setCookies).toHaveLength(5)
     for (const cookie of setCookies) {
       expect(cookie).toContain('HttpOnly')
       expect(cookie).toContain('Secure')
@@ -200,7 +200,7 @@ describe('callback', () => {
     expect(session).toContain('Secure')
     expect(session).toContain('SameSite=Lax')
     // One-time attempt cookies are cleared.
-    expect(out.setCookies.filter((c) => c.includes('Max-Age=0')).length).toBe(4)
+    expect(out.setCookies.filter((c) => c.includes('Max-Age=0')).length).toBe(5)
 
     const jar = parseCookies(session?.split(';')[0])
     const read = await h.auth.readSession(jar)

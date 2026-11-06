@@ -17,11 +17,14 @@ export function useWorldSignIn() {
     [],
   )
 
+  const returnTo = typeof window === 'undefined' ? '/' : `${window.location.pathname}${window.location.search}`
+  const href = `${LOGIN_PATH}?return_to=${encodeURIComponent(returnTo)}`
+
   const begin = useCallback(
     (event: MouseEvent<HTMLElement>) => {
       if (window.self === window.top) return
       event.preventDefault()
-      window.open(LOGIN_PATH, '_blank', 'noopener,noreferrer')
+      window.open(href, '_blank', 'noopener,noreferrer')
       setWaiting(true)
       if (timer.current) clearInterval(timer.current)
       const stopAt = Date.now() + 5 * 60_000
@@ -33,8 +36,8 @@ export function useWorldSignIn() {
         }
       }, 2_000)
     },
-    [refresh],
+    [href, refresh],
   )
 
-  return { begin, waiting, href: LOGIN_PATH }
+  return { begin, waiting, href }
 }

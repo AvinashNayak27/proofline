@@ -20,6 +20,7 @@ export const OIDC_COOKIES = {
   nonce: 'world_oidc_nonce',
   verifier: 'world_oidc_verifier',
   started: 'world_oidc_started',
+  returnTo: 'world_oidc_return_to',
 } as const
 
 /** A sign-in attempt must finish within ten minutes. */
@@ -261,7 +262,7 @@ export function createWorldAuth(config: WorldConfig, deps: WorldDeps = defaultDe
   }
 
   /** Step 1: fresh state, nonce and PKCE verifier, kept in short-lived cookies; redirect to World. */
-  async function startLogin(): Promise<Redirect> {
+  async function startLogin(returnTo = '/'): Promise<Redirect> {
     const discovery = await discover()
     const state = b64url(randomBytes(32))
     const nonce = b64url(randomBytes(32))
@@ -281,6 +282,7 @@ export function createWorldAuth(config: WorldConfig, deps: WorldDeps = defaultDe
         serializeCookie(OIDC_COOKIES.nonce, nonce, ATTEMPT_TTL_SECONDS),
         serializeCookie(OIDC_COOKIES.verifier, verifier, ATTEMPT_TTL_SECONDS),
         serializeCookie(OIDC_COOKIES.started, signStarted(deps.now(), state), ATTEMPT_TTL_SECONDS),
+        serializeCookie(OIDC_COOKIES.returnTo, encodeURIComponent(returnTo), ATTEMPT_TTL_SECONDS),
       ],
     }
   }
@@ -409,7 +411,15 @@ export function createWorldAuth(config: WorldConfig, deps: WorldDeps = defaultDe
     try {
       const identity = await validateIdToken(idToken, discovery.keys, nonce, startedAt)
       const session = await createSessionCookie(identity)
-      return { location: `${config.appOrigin}/`, setCookies: [...clearOidcCookies(), session] }
+      const encodedReturn = cookies[OIDC_COOKIES.returnTo]
+      let returnTo = '/'
+      if (encodedReturn) {
+        try {
+          const candidate = decodeURIComponent(encodedReturn)
+          if (candidate.startsWith('/') && !candidate.startsWith('//') && candidate.length <= 1024) returnTo = candidate
+        } catch { /* malformed return cookie falls back home */ }
+      }
+      return { location: `${config.appOrigin}${returnTo}`, setCookies: [...clearOidcCookies(), session] }
     } catch (err) {
       if (err instanceof AssuranceError) return fail('insufficient_assurance')
       if (err instanceof joseErrors.JWKSTimeout) return fail('service_unavailable')
