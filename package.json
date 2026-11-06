@@ -16,7 +16,10 @@
     "cre:relay": "bun run ./cre-claim/relay/gateway-relay.ts",
     "cre:simulate": "cd cre-claim && cre workflow simulate claim-workflow --target local-simulation --listen --trigger-index 0",
     "cre:test": "cd cre-claim/claim-workflow && bun test && cd ../relay && bun test",
-    "cre:bridge": "bun run ./cre-claim/relay/sim-bridge.ts"
+    "cre:bridge": "bun run ./cre-claim/relay/sim-bridge.ts",
+    "x:bridge": "bun run ./cre-claim/relay/x-sim-bridge.ts",
+    "x:workflow:typecheck": "cd cre-claim/x-analytics-workflow && bunx tsc --noEmit",
+    "xext:build": "bun build ./x-analytics-extension/src/background.ts --outdir ./x-analytics-extension/dist --target browser --format esm"
   },
   "dependencies": {
     "@circle-fin/adapter-viem-v2": "^1.19.2",

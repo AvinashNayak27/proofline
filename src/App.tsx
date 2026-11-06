@@ -1,28 +1,4 @@
-import { ClaimCard } from '@/components/ClaimCard'
-import { RewardPool } from '@/components/RewardPool'
-import { FundPool } from '@/components/FundPool'
-
-export default function App() {
-  return (
-    <div className="min-h-dvh px-4 py-8">
-      <main className="mx-auto flex max-w-md flex-col gap-4">
-        <header>
-          <p className="text-xs font-semibold uppercase" style={{ color: 'var(--muted)', letterSpacing: '0.08em' }}>
-            Testnet demo
-          </p>
-          <h1 className="display mt-1 text-3xl font-bold text-balance">DummyJSON to Arc claim</h1>
-        </header>
-
-        <ClaimCard />
-        <RewardPool />
-        <FundPool />
-
-        <p className="text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
-          Your password goes only from this browser to DummyJSON. The access token stays in memory and is sent once, to the
-          CRE workflow. DummyJSON tokens can carry identity claims, so the nodes that run the workflow can read them. The
-          workflow never logs the token or username, and nothing identifying is written onchain.
-        </p>
-      </main>
-    </div>
-  )
-}
+import { ClaimCard } from './components/ClaimCard'
+import { RewardPool } from './components/RewardPool'
+import { FundPool } from './components/FundPool'
+export default function App() { return <main className="mx-auto max-w-2xl p-6 space-y-5"><header><p className="text-xs font-semibold uppercase" style={{color:'var(--muted)'}}>CRE local demo</p><h1 className="display text-4xl font-bold">X analytics attester</h1><p className="mt-2 text-sm" style={{color:'var(--muted)'}}>Prove your post analytics with a replay inside the CRE confidential workflow simulation.</p></header><ClaimCard/><RewardPool/><FundPool/><p className="text-xs" style={{color:'var(--subtle)'}}>This is a local simulation. The browser extension captures your X session request and encrypts it for the configured enclave key. A verified CRE deployment and enclave attestation are required for production trust.</p></main> }

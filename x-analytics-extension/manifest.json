@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "X Analytics Attester (local demo)",
+  "version": "0.1.0",
+  "description": "Captures only the X TweetActivityQuery request needed by the local CRE analytics demo.",
+  "permissions": ["storage", "webRequest", "tabs"],
+  "host_permissions": ["https://x.com/i/api/graphql/*"],
+  "background": { "service_worker": "dist/background.js", "type": "module" },
+  "action": { "default_title": "X Analytics Attester" },
+  "externally_connectable": { "matches": ["http://localhost:5173/*"] }
+}

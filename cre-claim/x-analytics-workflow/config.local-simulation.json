@@ -1,0 +1,9 @@
+{
+  "mode": "local-simulation",
+  "application": "x-analytics-arc-v1",
+  "chainId": 5042002,
+  "chainSelectorName": "arc-testnet",
+  "maxClaimAmountUsdc6": "5000000",
+  "maxIntentTtlSeconds": 900,
+  "authorizedKeys": []
+}

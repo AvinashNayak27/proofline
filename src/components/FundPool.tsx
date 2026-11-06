@@ -16,7 +16,7 @@ export function FundPool() {
   const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync, data: hash, isPending, error, reset } = useWriteContract()
   const { isLoading: confirming, isSuccess } = useWaitForTransactionReceipt({ hash, chainId: arcTestnet.id })
-  const [amount, setAmount] = useState('3')
+  const [amount, setAmount] = useState('1')
 
   const usdc = getUsdc(arcTestnet.id)
   const receiver = CLAIM_RECEIVER
@@ -48,7 +48,7 @@ export function FundPool() {
 
   return (
     <section className="rounded-3xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-      <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Fund the reward pool</div>
+      <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Fund the X completion pool</div>
       <div className="mt-2 flex items-center gap-2">
         <input
           inputMode="decimal"
@@ -87,7 +87,7 @@ export function FundPool() {
         <p className="mt-2 text-xs" style={{ color: 'var(--danger)' }}>The transfer failed. Check your USDC balance and try again.</p>
       ) : null}
       <p className="mt-2 text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
-        Sends USDC from your connected wallet to the receiver as an ERC-20 transfer.
+        Optional Arc Testnet transfer to the existing receiver. Each video completion pays 0.001 USDC, subject to the receiver budget and per-claim cap.
       </p>
     </section>
   )

@@ -26,7 +26,7 @@ export function RewardPool() {
   if (!CLAIM_RECEIVER) {
     return (
       <p className="text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
-        No receiver contract is configured yet. Set VITE_CLAIM_RECEIVER after deploying to see the live reward pool.
+        Set VITE_CLAIM_RECEIVER to the existing ArcClaimReceiver address to see its live USDC pool.
       </p>
     )
   }
@@ -35,7 +35,7 @@ export function RewardPool() {
   return (
     <section className="rounded-3xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Reward pool (USDC, ERC-20 view)</span>
+        <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>X completion reward pool (USDC)</span>
         <a
           href={buildAddressExplorerUrl(arcTestnet.id, CLAIM_RECEIVER)}
           target="_blank"
