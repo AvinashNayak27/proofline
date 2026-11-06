@@ -1,10 +1,9 @@
 // Sends credential- and token-bearing JSON requests with XMLHttpRequest on purpose.
 //
 // Arc Studio's preview tracing patches globalThis.fetch and records request AND response bodies
-// (and mirrors them into the Tracing panel and traces.jsonl). A DummyJSON login body holds the
-// password and its response holds the access token, and the CRE trigger body holds the token, so
-// none of those calls may go through fetch. XHR is not instrumented. Never add console output,
-// error text, or any logging of a body, response, or header in this file.
+// (and mirrors them into the Tracing panel and traces.jsonl). The claim request carries the creator's
+// encrypted X session capture, so it must not go through fetch. XHR is not instrumented. Never add
+// console output, error text, or any logging of a body, response, or header in this file.
 
 export class PrivateHttpError extends Error {
   readonly kind: 'network' | 'timeout'

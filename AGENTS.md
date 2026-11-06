@@ -1,4 +1,4 @@
-# DummyJSON to Arc claim (testnet demo)
+# Proofline
 
 > Built with Arc Studio - money-powered apps in minutes
 
@@ -8,24 +8,31 @@ This is the **project memory** - what Arc Studio remembers about building this a
 
 ## What This App Does
 
-A browser UI where a DummyJSON user signs in, signs an EIP-712 claim intent with an Arc Testnet wallet, and posts token + signature to a Chainlink CRE HTTP-triggered workflow. The workflow verifies the signature, calls DummyJSON auth/me and reads the user `id` and `weight` (no username check), computes payout = weight / 100 USDC rounded down to 6 decimals, rejects missing/non-positive/over-cap weights, then (production mode) writes a CRE report that makes `ArcClaimReceiver` pay that amount once per user commitment (keccak256(abi.encode(application, userId))). TESTNET ONLY. TESTNET ONLY.
+Proofline is a human-verified, performance-based creator rewards marketplace on Arc Testnet. Tagline: "Brands fund attention. Creators earn from performance."
+
+- Brands create and fund USDC campaigns on `ProoflineCampaigns` (rate per 1,000 unique views, completion-rate bonus, per-post and per-creator caps, minimum views, end date). They can add budget, pause, and close for a refund.
+- Creators sign in with World ID (Orb only), connect a wallet, post a video on X containing their Proofline code (derived from campaign + wallet), and submit the link.
+- A companion Chrome extension opens the post's own X analytics page, captures that one request and encrypts it to the CRE enclave key.
+- The CRE workflow (enclave handler) decrypts it, replays it for views and completions (missing metrics count as 0), checks the public post for the code and author, then signs a report of the MEASUREMENTS. The contract computes the reward from the campaign's own rules and pays the creator.
 
 ### Layout
-- `contracts/ArcClaimReceiver.sol` (+ `interfaces/IReceiver.sol`): receiver. USDC via the ERC-20 interface (0x3600...0000, 6 decimals), immutable forwarder, `allowAnyWorkflow` immutable (true only for MockKeystoneForwarder simulation deployments), fails closed until expected workflow owner/ID is set. Report schema v2 = abi.encode(uint8 version=2, bytes32 claimId, bytes32 userCommitment, address recipient, uint256 amount, uint256 expiry) (192 bytes). Owner-set caps: maxRewardBudget (lifetime) and maxClaimAmount (per claim). Constructor: (forwarder, usdc, owner, maxRewardBudget, maxClaimAmount, allowAnyWorkflow).
-- `cre-claim/` CRE project. Workflow in `claim-workflow/` (targets `local-simulation` and `staging-settings`). `relay/gateway-relay.ts` signs requests for deployed workflows. `scripts/make-sim-payload.ts` builds local payloads (git-ignored `payloads/`).
-- `src/lib/claimIntent.ts` mirrors `cre-claim/claim-workflow/src/intent.ts`; a test pins them together.
-- Login and trigger calls use XHR on purpose (`src/lib/privateHttp.ts`): preview tracing patches fetch and records bodies.
+- `contracts/ProoflineCampaigns.sol` (+ `interfaces/IReceiver.sol`): escrow + reward engine. Report = 256-byte abi body (schema v3) + 65-byte signature from `reportSigner` over a chain/contract-bound digest (321 bytes). One reward per post globally; per-creator cap keyed on a World ID commitment. Campaign text is event-only (`CampaignCreated`); rules are stored. Tests in `contracts/test/ProoflineCampaigns*.t.sol`.
+- `cre-claim/proofline-workflow/`: CRE workflow (`local-simulation` and `staging-settings` targets). `cre-claim/relay/sim-bridge.ts` runs one simulation per claim; `gateway-relay.ts` signs requests for a deployed workflow. `cre-claim/scripts/` makes the enclave and report-signer keys (secrets go straight to `.env`).
+- `server/`: Bun server. World ID OIDC (code flow, S256 PKCE, Orb) in `worldAuth.ts`; `POST /api/claims` requires the session, adds the creator commitment and the campaign's required tag, and forwards to the bridge. Vite proxies `/api`.
+- `src/`: pages (`Landing`, `Campaigns`, `CampaignDetail`, `Create`, `Dashboard`, `Rewards`, `Admin`), `components/{layout,ui,campaigns,participate,brand}`, `hooks/`, `lib/proofline/` (abi, events, payout mirror, claim typed data, post code, extension bridge). Chain data is read from events starting at `VITE_PROOFLINE_DEPLOY_BLOCK`.
+- `x-analytics-extension/`: Proofline Creator Companion. Allowed pages are listed in `manifest.json` and `ALLOWED_APP_ORIGINS` in `src/background.ts`.
+- Claim requests use XHR on purpose (`src/lib/privateHttp.ts`): preview tracing patches fetch and records bodies.
+- Browser copies are pinned to workflow code by tests: `src/lib/proofline/{claim,code}.ts` vs `cre-claim/proofline-workflow/src/{intent,proofCode}.ts`, and `src/lib/proofline/payout.ts` mirrors `quote` in the contract.
 
 ### Facts verified from official sources
-- Arc Testnet CRE name `arc-testnet`, selector 3034092155422581607 (also checked with `cre workflow supported-chains`).
+- Arc Testnet CRE name `arc-testnet`, selector 3034092155422581607.
 - KeystoneForwarder (deployed) 0x76c9cf548b4179F8901cda1f8623568b58215E62; MockKeystoneForwarder (broadcast simulation) 0x6E9EE680ef59ef64Aa8C7371279c27E496b5eDc1.
+- World ID issuer https://auth.world.org; the callback path is exactly `/api/auth/world/callback`.
 
-### Deployments (Arc Testnet, 2026-11-06; deployed by the platform wallet, owner = 0xf7d4041e751E0b4f6eA72Eb82F2b200D278704A4)
-Current (v2, variable payout weight/100 USDC, one per user; budget 5 USDC, max per claim 5 USDC):
-- Simulation receiver (MockKeystoneForwarder 0x6E9E...eDc1, allowAnyWorkflow=true): 0x4723ddaf8c63fc58d304cdb84f1c5890233642af, tx 0xb1ef4aca6bd3064c45c6de764e69d050b2fc18f5bbcb95cbd6633ac40a961f49 (metadata: contracts/contract-metadata/ArcClaimReceiver.v2-simulation.json). Used by VITE_CLAIM_RECEIVER and config.staging.json.
-- Production receiver (KeystoneForwarder 0x76c9...1E62, allowAnyWorkflow=false): 0xc4fa9e11af4024a07645d24716e9eb76ebd81bca, tx 0x2eb6306d18da5a537ddcfdc5c7c6124d23dd581f246b0b4c65e2b4c772dcb2ee. Rejects every report until the owner calls setExpectedWorkflowId / setExpectedWorkflowOwner.
-Superseded (v1, fixed 1 USDC, oliviaw only, do not use): 0x22c081a3a58045aff5ec6465676b29db13bf3289 (holds 2 USDC, owner can withdraw) and 0xcdddef3f15ad92fc223f9968ae750a8469be6a3f.
-- Workflow NOT deployed (needs CRE Early Access); no workflow ID; registry `private` is configured in workflow.yaml.
+### Deployments (Arc Testnet)
+- ProoflineCampaigns (simulation: MockKeystoneForwarder, `allowAnyWorkflow=true`): 0xba639d505096fcc005b51ae34f84ee1164068343, deployed 2026-11-06 in block 71066818 (tx 0x015ab507c2d9106f643e1e6d1541528397992c3aef7ae1c95b1b47bbdbd9b98f, metadata `contracts/contract-metadata/ProoflineCampaigns.json`). Owner 0xf7d4041e751E0b4f6eA72Eb82F2b200D278704A4 (the user's wallet). Campaigns need the owner to call `setReportSigner` first (the Admin page does it); the signer address is `VITE_PROOFLINE_REPORT_SIGNER`.
+- The workflow is NOT deployed (needs CRE Early Access). The simulation forwarder is public, so rewards are protected by the report-signer signature, and the owner is trusted until `lockWorkflowIdentity`.
+- Older contracts from the earlier demo (ArcClaimReceiver) are superseded and not used.
 
 ## Tech Stack
 

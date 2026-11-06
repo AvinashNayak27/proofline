@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "server": "bun run ./server/index.ts",
-    "server:test": "bun test ./server",
     "deploy:self": "bun run ./scripts/self-deploy.ts",
     "compass:deploy": "bun run ./scripts/compass-deploy.ts",
     "fetch:abi": "bun run ./scripts/fetch-abi.ts",
@@ -15,13 +14,12 @@
     "check": "bash scripts/check.sh",
     "contracts:build": "forge build",
     "contracts:test": "forge test",
-    "cre:relay": "bun run ./cre-claim/relay/gateway-relay.ts",
-    "cre:simulate": "cd cre-claim && cre workflow simulate claim-workflow --target local-simulation --listen --trigger-index 0",
-    "cre:test": "cd cre-claim/claim-workflow && bun test && cd ../relay && bun test",
+    "server:test": "bun test ./server ./tests",
     "cre:bridge": "bun run ./cre-claim/relay/sim-bridge.ts",
-    "x:bridge": "bun run ./cre-claim/relay/x-sim-bridge.ts",
-    "x:workflow:typecheck": "cd cre-claim/x-analytics-workflow && bunx tsc --noEmit",
-    "xext:build": "bun build ./x-analytics-extension/src/background.ts --outdir ./x-analytics-extension/dist --target browser --format esm"
+    "cre:relay": "bun run ./cre-claim/relay/gateway-relay.ts",
+    "cre:test": "cd cre-claim/proofline-workflow && bun test && cd ../relay && bun test",
+    "cre:typecheck": "cd cre-claim/proofline-workflow && bunx tsc --noEmit",
+    "ext:build": "bun build ./x-analytics-extension/src/background.ts --outdir ./x-analytics-extension/dist --target browser --format esm"
   },
   "dependencies": {
     "@circle-fin/adapter-viem-v2": "^1.19.2",
@@ -44,6 +42,7 @@
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-router-dom": "6.30.1",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
     "viem": "2.57.5",

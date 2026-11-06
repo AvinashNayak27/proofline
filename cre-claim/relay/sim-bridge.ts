@@ -1,33 +1,16 @@
-// Local-only bridge that runs `cre workflow simulate` once per claim and returns the workflow's
-// real outcome to the app.
-//
-// `cre workflow simulate --listen` answers every POST with an empty 200, so the app cannot tell a
-// payout from a rejection (for example a login that is not the expected user) and would wait for a
-// payout that never comes. This bridge runs one simulation per request and returns only a coarse,
-// whitelisted result: status, reason, and for a delivered report the claim id, payout amount and tx hash.
-//
-//   SIM_TARGET      default staging-settings (use local-simulation for a no-write dry run)
-//   SIM_BROADCAST   "true" (default for staging-settings) sends the report through the mock forwarder
-//   BRIDGE_PORT     default 2002
-//   CRE_BIN         default "cre"
-//
-//   CRE_TRIGGER_URL=http://127.0.0.1:2002 bun run dev
-//   bun run cre:bridge
-//
-// The access token must reach the CLI, so the bridge writes the payload to a private temp file
-// (mode 0600, own 0700 directory) and deletes it as soon as the run ends. It never logs payloads
-// or CLI output. This is a development tool for simulation only; a deployed workflow uses the
-// signing relay instead.
+// Local-only bridge for the Proofline CRE workflow. Defaults to an Arc Testnet broadcast through the
+// mock forwarder to the ProoflineCampaigns contract when a creator submits a post. Only the Proofline
+// server (which checks the creator's World ID session) should be able to reach it.
 import { spawn } from 'node:child_process'
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-const ALLOWED_KEYS = ['encryptedSessionMaterial', 'wallet', 'nonce', 'expiry', 'signature']
-const MAX_BODY_BYTES = 16 * 1024
+const ALLOWED_KEYS = ['campaignId', 'postUrl', 'wallet', 'creatorCommitment', 'nonce', 'expiry', 'signature', 'encryptedSessionMaterial', 'requiredTag']
+const MAX_BODY_BYTES = 32 * 1024
 const RUN_TIMEOUT_MS = 120_000
 const RESULT_MARKER = 'Workflow Simulation Result:'
-const SAFE_FIELDS = ['status', 'reason', 'mode', 'txHash', 'claimId', 'amountUsdc6'] as const
+const SAFE_FIELDS = ['status', 'reason', 'mode', 'txHash', 'campaignId', 'amountUsdc6', 'uniqueViews', 'completions', 'postId', 'wallet'] as const
 
 export type BridgeResult = Partial<Record<(typeof SAFE_FIELDS)[number], string>>
 
@@ -69,6 +52,9 @@ const projectRoot = resolve(import.meta.dir, '..')
 const target = process.env.SIM_TARGET ?? 'staging-settings'
 const broadcast = (process.env.SIM_BROADCAST ?? (target === 'staging-settings' ? 'true' : 'false')) === 'true'
 const creBin = process.env.CRE_BIN ?? 'cre'
+if (!['local-simulation', 'staging-settings'].includes(target) || (target === 'local-simulation' && broadcast)) {
+  throw new Error('invalid simulation target/broadcast combination')
+}
 
 function runSimulation(input: Record<string, string>): Promise<BridgeResult | null> {
   const dir = mkdtempSync(join(tmpdir(), 'claim-'), { encoding: 'utf8' })
@@ -76,7 +62,7 @@ function runSimulation(input: Record<string, string>): Promise<BridgeResult | nu
   const file = join(dir, 'payload.json')
   writeFileSync(file, JSON.stringify(input), { mode: 0o600 })
   const args = [
-    'workflow', 'simulate', 'claim-workflow',
+    'workflow', 'simulate', 'proofline-workflow',
     '--target', target,
     '--non-interactive', '--trigger-index', '0',
     '--http-payload', file,
@@ -102,7 +88,7 @@ function runSimulation(input: Record<string, string>): Promise<BridgeResult | nu
 }
 
 if (import.meta.main) {
-  const port = Number(process.env.BRIDGE_PORT ?? 2002)
+  const port = Number(process.env.BRIDGE_PORT ?? 2003)
   let queue: Promise<unknown> = Promise.resolve() // one simulation at a time
 
   Bun.serve({

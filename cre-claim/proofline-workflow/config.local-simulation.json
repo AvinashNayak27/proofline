@@ -1,0 +1,8 @@
+{
+  "mode": "local-simulation",
+  "application": "proofline-v1",
+  "chainId": 5042002,
+  "chainSelectorName": "arc-testnet",
+  "maxIntentTtlSeconds": 900,
+  "authorizedKeys": []
+}

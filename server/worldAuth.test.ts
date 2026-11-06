@@ -374,3 +374,15 @@ describe('app session', () => {
     expect(cleared[0]).toContain('Max-Age=0')
   })
 })
+
+describe('creator commitment', () => {
+  test('is a stable one-way commitment keyed on (iss, sub), never on sub alone', async () => {
+    const { creatorCommitment } = await import('./worldAuth')
+    const a = creatorCommitment('https://auth.world.org', 'sub-1')
+    expect(a).toMatch(/^0x[0-9a-f]{64}$/)
+    expect(creatorCommitment('https://auth.world.org', 'sub-1')).toBe(a)
+    expect(creatorCommitment('https://auth.world.org', 'sub-2')).not.toBe(a)
+    expect(creatorCommitment('https://other.example', 'sub-1')).not.toBe(a)
+    expect(a).not.toContain('sub-1')
+  })
+})

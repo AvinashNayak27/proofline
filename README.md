@@ -1,69 +1,81 @@
-# DummyJSON to Arc claim (testnet demo)
+# Proofline
 
-A testnet-only demo where a user signs in to DummyJSON, connects an Arc Testnet wallet, signs a claim, and receives a USDC reward equal to their DummyJSON profile weight divided by 100 (for example weight 58 pays 0.58 USDC), once per user, if a Chainlink CRE workflow verifies the login. The DummyJSON access token is encrypted in the browser to a key held by the CRE enclave, so only the enclave can read it. Passwords go only from the browser to DummyJSON, and nothing identifying is written onchain.
+**Brands fund attention. Creators earn from performance.**
+
+Proofline is a human-verified, performance-based creator rewards marketplace on Arc. Brands create and fund USDC campaigns with transparent payout rules. Creators sign in with World ID, post about a campaign on X, and have their reach measured by a Chainlink CRE workflow. Rewards are paid in USDC the moment a post is verified.
 
 Built with [Arc Studio](https://studio.arc.io)
 
+Testnet only. Proofline runs on Arc Testnet with test USDC. Do not use real funds.
+
+## What you can do
+
+- **Brands:** launch a campaign, set the rate per 1,000 views, a completion bonus, per-post and per-creator caps, and a minimum view count. Top up, pause, or close the campaign and get the unspent budget back.
+- **Creators:** sign in with an Orb-verified World ID, pick a campaign, post on X with your Proofline code, submit the link, and get paid.
+- **Everyone:** browse live campaigns and see every payout onchain.
+
 ## Tech stack
 
-- React, Vite, TypeScript, Tailwind CSS, wagmi, viem, ConnectKit
-- Solidity 0.8.28 with Foundry (contract and tests in `contracts/`)
-- Chainlink CRE TypeScript workflow in `cre-claim/` (CRE CLI)
+- React, Vite, TypeScript, Tailwind CSS, React Router, wagmi, viem, ConnectKit
+- Solidity 0.8.28 with Foundry: the `ProoflineCampaigns` escrow and reward contract in `contracts/`
+- Chainlink CRE TypeScript workflow in `cre-claim/proofline-workflow/` (runs in an enclave handler)
+- Bun server for World ID sign-in and claim submission in `server/`
+- Chrome companion extension in `x-analytics-extension/`
 
 ## Development
 
-Prerequisites: Bun, Foundry, and the CRE CLI (`cre`, logged in with `cre login`).
+Prerequisites: Bun, Foundry, the CRE CLI (`cre`, logged in with `cre login` or a `CRE_API_KEY`), and Chrome for the companion extension.
 
 ```bash
 bun install
 bun run dev              # app on http://localhost:5173
-bun run server           # sign-in and claim gate server (World ID), proxied by the dev server
-bun run server:test      # World ID sign-in tests
+bun run server           # World ID sign-in and claim submission (proxied by the dev server)
+bun run cre:bridge       # runs the CRE workflow for each claim and returns the result
 bun run check            # lint and typecheck
 bun run contracts:build  # compile contracts
-bun run contracts:test   # contract unit tests
+bun run contracts:test   # contract tests
+bun run server:test      # server and app logic tests
 bun run cre:test         # workflow and relay tests
-bun cre-claim/scripts/make-enclave-key.ts   # one-time: create the enclave keypair (writes .env, prints only the public key)
-bun run cre:simulate     # run the workflow locally in listen mode (no deployment, no transactions)
-bun run cre:bridge       # local bridge that runs one simulation per claim and returns the real result
-bun run cre:relay        # signing relay for a deployed workflow (see below)
+bun run ext:build        # build the companion extension
 ```
 
-When `VITE_CLAIM_RECEIVER` is set, the app also shows the live reward pool and a "Fund pool" button that sends USDC from your connected wallet to the receiver as an ERC-20 transfer. Plain native sends to the receiver revert on purpose.
+One-time key setup (each prints only a public value and writes the secret to `.env`):
 
-Local flow: run `bun run cre:bridge` in one terminal and `bun run dev` in another, with `CRE_TRIGGER_URL=http://127.0.0.1:2002` in `.env`. Each claim runs one simulation and the app shows the real outcome right away: paid, or not eligible. By default the bridge uses the staging target and broadcasts the report through the mock forwarder, which sends a real testnet transaction. Set `SIM_TARGET=local-simulation` for a dry run that sends nothing. Plain `bun run cre:simulate` also works, but it answers every request with an empty response, so the app can only wait for a payout.
+```bash
+bun cre-claim/scripts/make-enclave-key.ts     # key the creator's X capture is encrypted to
+bun cre-claim/scripts/make-report-signer.ts   # key that signs reward reports; prints its address
+```
 
-A deployed workflow only accepts requests signed by an authorized key. Run `bun run cre:relay` and start the app with `CRE_TRIGGER_URL=http://127.0.0.1:2001` so the relay signs requests; the browser never holds that key.
+The contract owner registers the report signer address once on the `/admin` page (or with `setReportSigner`). Campaigns can be created after that.
+
+Sign-in needs a public HTTPS address for the World ID redirect, for example a tunnel to port 5173. Register `<your origin>/api/auth/world/callback` in the World ID developer portal and set `WORLD_ID_REDIRECT_URI` to the same value.
+
+Companion extension: run `bun run ext:build`, then in `chrome://extensions` turn on Developer mode and Load unpacked from `x-analytics-extension/`. Put its ID in `VITE_PROOFLINE_EXTENSION_ID`. See `x-analytics-extension/README.md`.
 
 ### Environment variables
 
+Copy `.env.local.example` to `.env.local` and fill it in. Never commit real values.
+
 | Name | Purpose |
 | --- | --- |
-| `VITE_CLAIM_RECEIVER` | Optional. Deployed receiver contract address on Arc Testnet. Enables the live reward pool and payout confirmation. |
-| `WORLD_ID_CLIENT_ID`, `WORLD_ID_CLIENT_SECRET` | Required. Credentials of your World ID app from the developer portal. Server side only; never commit or share the secret. |
-| `WORLD_ID_REDIRECT_URI` | Required. Exact callback URL registered in the portal, ending in `/api/auth/world/callback`. The app returns to this URL's origin after sign-in. |
-| `WORLD_ID_SESSION_SECRET` | Required. Random string of at least 32 characters that signs the app session cookie. |
-| `AUTH_SERVER_PORT` | Optional. Port of the sign-in server. Defaults to 3001. |
-| `VITE_ENCLAVE_PUBLIC_KEY` | Required to claim. Public key of the CRE enclave (0x + 64 hex). The app encrypts the access token to it. Created by `make-enclave-key.ts`. |
-| `ENCLAVE_PRIVATE_KEY` | Workflow and bridge only. Private half of the enclave key, read by the CRE CLI during simulation. Never commit or share it. For a deployed workflow, upload it with `cre secrets create`. |
-| `CRE_TRIGGER_URL` | Optional. Where the dev server forwards `/cre/trigger`. Defaults to the local simulator on port 2000; use `http://127.0.0.1:2002` for the bridge or `http://127.0.0.1:2001` for the signing relay. |
-| `SIM_TARGET`, `SIM_BROADCAST`, `BRIDGE_PORT` | Bridge only. Workflow target (default `staging-settings`), whether to broadcast, and the port (default 2002). |
-| `CRE_TRIGGER_PRIVATE_KEY` | Relay only. Key authorized to trigger the deployed workflow. Keep it in your own environment, never in chat or git. |
-| `CRE_GATEWAY_URL` | Relay only. Gateway URL for your CRE environment. |
-| `CRE_WORKFLOW_ID` | Relay only. 64-character workflow ID printed on deploy. |
-| `RELAY_PORT` | Relay only. Defaults to 2001. |
-| `DUMMYJSON_USERNAME`, `DUMMYJSON_PASSWORD` | Only for `cre-claim/scripts/make-sim-payload.ts`, which builds a local test payload. |
+| `WORLD_ID_CLIENT_ID`, `WORLD_ID_CLIENT_SECRET` | Required. Credentials of your World ID app. Server side only. |
+| `WORLD_ID_REDIRECT_URI` | Required. Exact callback URL registered in the portal, ending in `/api/auth/world/callback`. |
+| `WORLD_ID_SESSION_SECRET` | Required. Random string of at least 32 characters that signs the session cookie. |
+| `VITE_PROOFLINE_CONTRACT`, `VITE_PROOFLINE_DEPLOY_BLOCK` | Required. Deployed `ProoflineCampaigns` address and the block it was deployed in. |
+| `VITE_ENCLAVE_PUBLIC_KEY` | Required. Public key creators' X captures are encrypted to. |
+| `VITE_PROOFLINE_EXTENSION_ID` | Required for creators. Chrome ID of the companion extension. `VITE_X_ANALYTICS_EXTENSION_ID` is accepted as an older name. |
+| `VITE_PROOFLINE_REPORT_SIGNER` | Optional. Report signer address, shown on the admin page. |
+| `ENCLAVE_PRIVATE_KEY`, `REPORT_SIGNER_PRIVATE_KEY` | Workflow only. Read by the CRE CLI in simulation. Keep them secret. |
+| `AUTH_SERVER_PORT` | Optional. Port of the Bun server. Defaults to 3001. |
+| `CRE_TRIGGER_URL` | Optional. Where the server sends claims: the bridge (`http://127.0.0.1:2003`) or the signing relay (`http://127.0.0.1:2001`). |
+| `SIM_TARGET`, `SIM_BROADCAST`, `BRIDGE_PORT` | Bridge only. Workflow target (default `staging-settings`), whether to broadcast, and its port (default 2002; use 2003 with the server default). |
+| `CRE_ETH_PRIVATE_KEY` | Bridge only. Funded testnet key the CRE CLI uses to broadcast. |
+| `CRE_TRIGGER_PRIVATE_KEY`, `CRE_GATEWAY_URL`, `CRE_WORKFLOW_ID`, `RELAY_PORT` | Signing relay only, for a deployed workflow. |
+| `RPC_URL_Arc_Testnet`, `RPC_PROXY_BASE_URL`, `RPC_PROXY_TOKEN`, `RPC_PROXY_CHAINS` | Optional. RPC overrides for the server. Provisioned automatically inside Arc Studio. |
 
-## World ID sign-in
+## Privacy and trust
 
-The app is gated by World ID (OIDC Authorization Code Flow with S256 PKCE). Only people with an Orb-verified World ID get in, and every sign-in asks them to authenticate again. Copy `.env.local.example` to `.env.local`, fill in the four `WORLD_ID_*` values, register `<your public origin>/api/auth/world/callback` as the redirect URL in the World ID developer portal, then run `bun run server` and `bun run dev`.
-
-Signing out ends this app's session only. World ID has no sign-out endpoint, so it does not end your World ID session.
-
-## Privacy notes
-
-- The app never sends the DummyJSON access token in readable form. It encrypts the token in the browser to the enclave's public key, binds it to the wallet, nonce and expiry you sign, and sends only that encrypted session material. The enclave decrypts it, calls DummyJSON, and works out the payout. Only the opaque claim id, wallet, amount and expiry leave the enclave.
-- Simulation uses the CRE simulator, which is not a real enclave and is for debugging only. A live deployment of this workflow needs Confidential Workflows access (private beta) and the private key stored as a CRE secret.
-- Passwords go only from the browser to DummyJSON. The app sends login and trigger requests with XMLHttpRequest so the preview's request tracing does not record the password or the encrypted session material.
-
-Testnet only. Do not use with real funds.
+- Creators are identified to the contract only by a one-way commitment to their World ID. No handle, tweet text or World ID subject goes onchain.
+- Your X analytics are captured by your own browser and encrypted before they leave it. Only the enclave workflow can open them.
+- The contract, not the workflow, computes every reward from the campaign's public rules. The workflow only reports measurements, signed with a key that the contract checks.
+- Signing out ends this app's session. It does not sign you out of World ID.

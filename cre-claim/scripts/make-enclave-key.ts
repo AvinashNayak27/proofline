@@ -1,4 +1,4 @@
-// Generates the enclave keypair used to protect DummyJSON access tokens.
+// Generates the enclave keypair used to protect creators' captured X session requests.
 //
 //   bun cre-claim/scripts/make-enclave-key.ts [--rotate]
 //

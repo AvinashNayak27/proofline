@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "X Analytics Attester (local demo)",
-  "version": "0.1.0",
-  "description": "Captures only the X TweetActivityQuery request needed by the local CRE analytics demo.",
+  "name": "Proofline Creator Companion",
+  "version": "1.0.0",
+  "description": "Reads your own X post analytics for a Proofline campaign claim and encrypts them so only the Proofline verification workflow can open them.",
   "permissions": ["storage", "webRequest", "tabs"],
   "host_permissions": ["https://x.com/i/api/graphql/*"],
   "background": { "service_worker": "dist/background.js", "type": "module" },
-  "action": { "default_title": "X Analytics Attester" },
+  "action": { "default_title": "Proofline Creator Companion" },
   "externally_connectable": { "matches": ["http://localhost:5173/*", "https://i0sr6ifstg1gai9k5yzas.preview.studio.arc.io/*"] }
 }

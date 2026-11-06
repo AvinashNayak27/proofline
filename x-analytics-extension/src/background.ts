@@ -3,14 +3,14 @@ import { x25519 } from '@noble/curves/ed25519'
 import { hkdf } from '@noble/hashes/hkdf'
 import { sha256 } from '@noble/hashes/sha256'
 
-const INFO = 'x-analytics-cre-demo/session/v2'
-const KEY = 'pendingXAnalytics'
-type Pending = { postId: string; handle: string; wallet: string; nonce: string; expiry: string; enclavePublicKey: string; startedAt: number; tabId: number }
+const INFO = 'proofline/session/v1'
+const KEY = 'pendingProoflineCapture'
+type Pending = { campaignId: string; postId: string; handle: string; wallet: string; nonce: string; expiry: string; enclavePublicKey: string; startedAt: number; tabId: number }
 type Ready = { postId: string; encryptedSessionMaterial: string; tabId: number }
 type State = { pending?: Pending; ready?: Ready }
 const hex = (b: Uint8Array) => `0x${Array.from(b, x => x.toString(16).padStart(2, '0')).join('')}`
 const unhex = (s: string) => Uint8Array.from(s.slice(2).match(/../g)!.map(x => parseInt(x, 16)))
-const aad = (p: Pending) => `${INFO}|5042002|${p.postId}|${p.wallet.toLowerCase()}|${p.nonce.toLowerCase()}|${p.expiry}`
+const aad = (p: Pending) => `${INFO}|5042002|${p.campaignId}|${p.postId}|${p.wallet.toLowerCase()}|${p.nonce.toLowerCase()}|${p.expiry}`
 
 function seal(value: unknown, p: Pending): string {
   const recipient = unhex(p.enclavePublicKey)
@@ -73,10 +73,10 @@ chrome.runtime.onMessageExternal.addListener((m, sender, send) => {
     }
     if (m?.type !== 'BEGIN_CAPTURE') { send({ ok: false }); return }
     const post = parsePost(m.link)
-    if (!post || !/^0x[0-9a-fA-F]{40}$/.test(m.wallet) || !/^0x[0-9a-fA-F]{64}$/.test(m.nonce) || !/^[1-9][0-9]{0,11}$/.test(m.expiry) || !/^0x[0-9a-fA-F]{64}$/.test(m.enclavePublicKey)) { send({ ok: false, reason: 'invalid_request' }); return }
+    if (!post || typeof m.campaignId !== 'string' || !/^[1-9][0-9]{0,17}$/.test(m.campaignId) || !/^0x[0-9a-fA-F]{40}$/.test(m.wallet) || !/^0x[0-9a-fA-F]{64}$/.test(m.nonce) || !/^[1-9][0-9]{0,11}$/.test(m.expiry) || !/^0x[0-9a-fA-F]{64}$/.test(m.enclavePublicKey)) { send({ ok: false, reason: 'invalid_request' }); return }
     await chrome.storage.session.remove(KEY)
     const tab = await chrome.tabs.create({ url: 'about:blank', active: true })
-    await putState({ pending: { ...post, wallet: m.wallet, nonce: m.nonce, expiry: m.expiry, enclavePublicKey: m.enclavePublicKey, startedAt: Date.now(), tabId: tab.id! } })
+    await putState({ pending: { ...post, campaignId: m.campaignId, wallet: m.wallet, nonce: m.nonce, expiry: m.expiry, enclavePublicKey: m.enclavePublicKey, startedAt: Date.now(), tabId: tab.id! } })
     await chrome.tabs.update(tab.id!, { url: `https://x.com/${post.handle}/status/${post.postId}/analytics` })
     send({ ok: true, postId: post.postId })
   })().catch(() => send({ ok: false, reason: 'extension_error' }))

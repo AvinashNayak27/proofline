@@ -6,6 +6,7 @@
 //
 // Docs followed: https://auth.world.org/docs/guides/{getting-started,oidc,step-up,id-token,testing}
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { encodeAbiParameters, keccak256, parseAbiParameters } from 'viem'
 import { createRemoteJWKSet, errors as joseErrors, jwtVerify, SignJWT, type JWTVerifyGetKey } from 'jose'
 
 export const ISSUER = 'https://auth.world.org'
@@ -195,7 +196,24 @@ const isHttpsOnIssuer = (value: unknown): value is string => {
 
 // ---------------------------------------------------------------- app session
 
-export type WorldSession = { iss: string; sub: string; acr: string; amr: string[]; authTime: number; expiresAt: number }
+export type WorldSession = {
+  iss: string
+  sub: string
+  /** Opaque, stable commitment to (issuer, subject). This is what the contract keys creator caps on. */
+  creatorCommitment: `0x${string}`
+  acr: string
+  amr: string[]
+  authTime: number
+  expiresAt: number
+}
+
+/**
+ * keccak256(abi.encode("proofline-creator-v1", issuer, subject)). The World ID subject is never
+ * shared; only this one-way commitment reaches the workflow and the chain. Always keyed on the pair.
+ */
+export function creatorCommitment(iss: string, sub: string): `0x${string}` {
+  return keccak256(encodeAbiParameters(parseAbiParameters('string tag, string iss, string sub'), ['proofline-creator-v1', iss, sub]))
+}
 
 export type Redirect = { location: string; setCookies: string[] }
 
@@ -417,6 +435,7 @@ export function createWorldAuth(config: WorldConfig, deps: WorldDeps = defaultDe
       return {
         iss: world.iss,
         sub: world.sub,
+        creatorCommitment: creatorCommitment(world.iss, world.sub),
         acr: payload.acr,
         amr: Array.isArray(payload.amr) ? payload.amr.filter((x): x is string => typeof x === 'string') : [],
         authTime: typeof payload.auth_time === 'number' ? payload.auth_time : 0,

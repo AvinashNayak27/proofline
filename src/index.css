@@ -6,23 +6,34 @@
   box-sizing: border-box;
 }
 
+/* Proofline brand tokens (Arc Light base, one warm signal accent). */
 :root {
-  --bg: #ffffff;
+  --bg: #faf7f2;
   --bg-gradient: linear-gradient(180deg, #f9f9fc 0%, #fffcf7 52%, #fbf7f2 100%);
   --surface: rgba(255, 255, 255, 0.72);
-  --surface-strong: rgba(255, 255, 255, 0.9);
-  --surface-muted: #f5f5f8;
-  --ink: #122d45;
-  --ink-2: #334155;
-  --muted: #6b6580;
-  --subtle: #8a849c;
-  --border: rgba(18, 45, 69, 0.12);
-  --border-strong: rgba(25, 53, 77, 0.5);
-  --accent: #122d45;
+  --surface-strong: rgba(255, 255, 255, 0.92);
+  --surface-muted: #f4f1ec;
+  --ink: #0f2236;
+  --ink-2: #2f4358;
+  --muted: #5b6776;
+  --subtle: #7d8794;
+  --border: rgba(15, 34, 54, 0.12);
+  --border-strong: rgba(15, 34, 54, 0.42);
+  --accent: #0f2236;
   --accent-hover: #1061a6;
   --focus: #85b1ed;
+  --signal: #e5532d;
+  --signal-soft: rgba(229, 83, 45, 0.1);
   --success: #1a8047;
+  --success-soft: rgba(26, 128, 71, 0.1);
   --danger: #ba2b4c;
+  --danger-soft: rgba(186, 43, 76, 0.09);
+  --warn: #9a5b00;
+  --warn-soft: rgba(154, 91, 0, 0.1);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -31,6 +42,7 @@ body {
   min-height: 100dvh;
   background: var(--bg-gradient);
   color: var(--ink);
+  -webkit-font-smoothing: antialiased;
 }
 
 .display {
@@ -40,4 +52,147 @@ body {
 
 .mono {
   font-family: 'JetBrains Mono', Menlo, monospace;
+}
+
+@layer components {
+  .pl-card {
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 8px 28px rgba(15, 34, 54, 0.06);
+  }
+  .pl-inner {
+    background: var(--surface-muted);
+    border-radius: 1rem;
+  }
+  .pl-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .pl-btn {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s, opacity 0.15s;
+  }
+  .pl-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .pl-btn:disabled,
+  .pl-btn[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .pl-btn:focus-visible,
+  .pl-input:focus-visible,
+  .pl-link:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .pl-btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .pl-btn-primary:hover:not(:disabled) {
+    background: #1b3a57;
+  }
+  .pl-btn-secondary {
+    background: var(--surface-strong);
+    color: var(--ink);
+    border: 1px solid var(--border-strong);
+  }
+  .pl-btn-secondary:hover:not(:disabled) {
+    background: #fff;
+    border-color: var(--ink);
+  }
+  .pl-btn-ghost {
+    background: transparent;
+    color: var(--ink-2);
+  }
+  .pl-btn-ghost:hover:not(:disabled) {
+    background: var(--surface-muted);
+  }
+  .pl-btn-danger {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid rgba(186, 43, 76, 0.28);
+  }
+  .pl-btn-sm {
+    min-height: 2.25rem;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8125rem;
+  }
+  .pl-input {
+    width: 100%;
+    min-height: 2.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-strong);
+    background: #fff;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.9375rem;
+    color: var(--ink);
+  }
+  .pl-input::placeholder {
+    color: var(--subtle);
+  }
+  .pl-input[aria-invalid='true'] {
+    border-color: var(--danger);
+  }
+  .pl-link {
+    color: var(--accent-hover);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .pl-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--surface-muted);
+    color: var(--ink-2);
+  }
+}
+
+@keyframes pl-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.pl-skeleton {
+  background: var(--surface-muted);
+  border-radius: 0.75rem;
+  animation: pl-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .pl-skeleton {
+    animation: none;
+  }
+  .pl-btn {
+    transition: none;
+  }
 }

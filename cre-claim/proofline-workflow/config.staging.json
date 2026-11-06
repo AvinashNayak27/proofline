@@ -1,0 +1,12 @@
+{
+  "mode": "production",
+  "application": "proofline-v1",
+  "chainId": 5042002,
+  "chainSelectorName": "arc-testnet",
+  "maxIntentTtlSeconds": 900,
+  "authorizedKeys": [
+    "0x590fBa6FD33a604e00289299348F2C4A1CB978a5"
+  ],
+  "receiver": "0xba639d505096fcc005b51ae34f84ee1164068343",
+  "gasLimit": "400000"
+}
