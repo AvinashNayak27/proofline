@@ -24,7 +24,7 @@ contract ProoflineCampaignsHandler is Test {
     uint256 public ghostPaidTotal; // sum of payouts observed via recipient balance deltas
     uint256 public ghostDonated;
     uint256 public successCount;
-    mapping(bytes32 => uint256) public postPayCount;
+    mapping(uint256 campaignId => mapping(bytes32 postKey => uint256)) public postPayCount;
 
     uint256 internal signerPk;
     address public attacker;
@@ -128,7 +128,7 @@ contract ProoflineCampaignsHandler is Test {
         uint256 before = usdc.balanceOf(rec);
         vm.prank(forwarder);
         try pc.onReport("", r) {
-            postPayCount[postKey]++;
+            postPayCount[id][postKey]++;
             successCount++;
             ghostPaidTotal += usdc.balanceOf(rec) - before;
         } catch {}
@@ -291,15 +291,32 @@ contract ProoflineCampaignsInvariantTest is Test {
         }
     }
 
-    function invariant_PostKeyPaysAtMostOnceGlobally() public view {
+    /// @dev Each (campaignId, postKey) pair pays at most once; the same key may pay once per campaign.
+    function invariant_CampaignPostPairPaysAtMostOnce() public view {
         uint256 rewarded;
-        for (uint256 k = 1; k <= h.POST_KEYS(); ++k) {
-            bytes32 key = bytes32(k);
-            assertLe(h.postPayCount(key), 1);
-            assertEq(pc.postRewarded(key), h.postPayCount(key) == 1);
-            if (pc.postRewarded(key)) rewarded++;
+        for (uint256 id = 1; id <= _n(); ++id) {
+            for (uint256 k = 1; k <= h.POST_KEYS(); ++k) {
+                bytes32 key = bytes32(k);
+                assertLe(h.postPayCount(id, key), 1);
+                assertEq(pc.postRewarded(id, key), h.postPayCount(id, key) == 1);
+                if (pc.postRewarded(id, key)) rewarded++;
+            }
         }
         assertEq(rewarded, h.successCount());
+    }
+
+    /// @dev Sanity: the same key can pay in two different campaigns through the handler.
+    function test_HandlerSamePostKeyPaysInTwoCampaigns() public {
+        h.createCampaign(0, 10_000_000, 3_000_000, 0, 1_000_000, 5000, 0, 0, 30 days);
+        h.createCampaign(1, 10_000_000, 3_000_000, 0, 1_000_000, 5000, 0, 0, 30 days);
+        h.report(1, 1, 0, 0, 1000, 1000);
+        h.report(2, 1, 0, 0, 1000, 1000);
+        h.report(2, 1, 0, 0, 1000, 1000); // repeat in campaign 2: rejected
+        assertEq(h.successCount(), 2);
+        assertEq(h.postPayCount(1, bytes32(uint256(1))), 1);
+        assertEq(h.postPayCount(2, bytes32(uint256(1))), 1);
+        assertTrue(pc.postRewarded(1, bytes32(uint256(1))));
+        assertTrue(pc.postRewarded(2, bytes32(uint256(1))));
     }
 
     function invariant_PaidTotalsMatchRecipientsAndCampaigns() public view {

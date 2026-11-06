@@ -11,7 +11,7 @@ import type { Config } from './config'
 
 export const readAbi = parseAbi([
   'function getCampaign(uint256 id) view returns ((address brand, uint64 startsAt, uint64 endsAt, uint32 minViews, uint16 bonusBps, uint8 status, bool requireProofCode, uint96 cpmUsdc6, uint96 maxPerPost, uint96 maxPerCreator, uint128 deposited, uint128 paid, uint128 withdrawn))',
-  'function postRewarded(bytes32 postKey) view returns (bool)',
+  'function postRewarded(uint256 campaignId, bytes32 postKey) view returns (bool)',
   'function creatorPaid(uint256 campaignId, bytes32 creatorCommitment) view returns (uint256)',
   'function previewPayout(uint256 id, bytes32 creatorCommitment, uint256 uniqueViews, uint256 completions) view returns (uint256)',
 ])
@@ -55,7 +55,8 @@ function finish(pending: Pending, functionName: Fn): unknown {
 }
 
 export const startCampaignRead = (rt: Runtime<Config>, receiver: Address, id: bigint) => start(rt, receiver, 'getCampaign', [id])
-export const startPostRewardedRead = (rt: Runtime<Config>, receiver: Address, key: Hex) => start(rt, receiver, 'postRewarded', [key])
+export const startPostRewardedRead = (rt: Runtime<Config>, receiver: Address, campaignId: bigint, key: Hex) =>
+  start(rt, receiver, 'postRewarded', [campaignId, key])
 export const startCreatorPaidRead = (rt: Runtime<Config>, receiver: Address, id: bigint, commitment: Hex) =>
   start(rt, receiver, 'creatorPaid', [id, commitment])
 export const startPreviewPayoutRead = (rt: Runtime<Config>, receiver: Address, id: bigint, commitment: Hex, views: number, completions: number) =>

@@ -108,7 +108,7 @@ export function verify(c: Claim): boolean {
   return signer?.toLowerCase() === c.wallet.toLowerCase()
 }
 
-/** Globally unique, opaque key for a post: one tweet pays at most once across every campaign. */
+/** Opaque key for a post. A post pays at most once per campaign: the contract tracks (campaignId, postKey). */
 export function postKey(postId: string): Hex {
   return keccak256(encodeAbiParameters(parseAbiParameters('string tag, string postId'), ['proofline-post-v1', postId]))
 }

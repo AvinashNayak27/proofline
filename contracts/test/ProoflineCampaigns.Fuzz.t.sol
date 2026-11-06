@@ -171,11 +171,11 @@ contract ProoflineCampaignsFuzzTest is ProoflineCampaignsTestBase {
             assertEq(pc.remaining(id), dep - got);
             assertEq(pc.totalEscrowed(), dep - got);
             assertEq(usdc.balanceOf(address(pc)), dep - got);
-            assertTrue(pc.postRewarded(POST_1));
+            assertTrue(pc.postRewarded(id, POST_1));
         } catch {
             // Only legal reason without a revert-by-design is zero payout.
             assertEq(expected, 0);
-            assertFalse(pc.postRewarded(POST_1));
+            assertFalse(pc.postRewarded(id, POST_1));
             assertEq(usdc.balanceOf(creator), before);
         }
     }
@@ -221,7 +221,7 @@ contract ProoflineCampaignsFuzzTest is ProoflineCampaignsTestBase {
         try pc.onReport("", rep) {
             fail("forged/tampered report accepted");
         } catch {}
-        assertFalse(pc.postRewarded(POST_1));
+        assertFalse(pc.postRewarded(id, POST_1));
         assertEq(pc.creatorPaid(id, COMMIT_A), 0);
         assertEq(pc.totalEscrowed(), escrow);
         assertEq(usdc.balanceOf(address(pc)), escrow);

@@ -67,7 +67,7 @@ export function parsePostUrl(link: string): { handle: string; postId: string } |
   return m ? { handle: m[1], postId: m[2] } : undefined
 }
 
-/** Same opaque key the workflow and contract use: one post pays once across every campaign. */
+/** Same opaque key the workflow and contract use. The contract lets a post pay once per campaign. */
 export function postKey(postId: string): Hex {
   return keccak256(encodeAbiParameters(parseAbiParameters('string tag, string postId'), ['proofline-post-v1', postId]))
 }

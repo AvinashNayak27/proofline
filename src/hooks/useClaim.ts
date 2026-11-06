@@ -107,7 +107,7 @@ export function useClaim(campaignId: bigint) {
           address: PROOFLINE_CONTRACT,
           abi: prooflineAbi,
           functionName: 'postRewarded',
-          args: [postKey(post.postId)],
+          args: [campaignId, postKey(post.postId)],
         })
         if (!rewarded) return setPhase({ name: 'failed', message: REJECTION_COPY.delivery_reverted })
         void refreshChain()

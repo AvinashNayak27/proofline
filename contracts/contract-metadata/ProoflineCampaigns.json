@@ -1,13 +1,20 @@
 {
-  "contractAddress": "0x433920fdc403317005eb8c5dcf9a43a153243528",
+  "contractAddress": "0x3b43a325b5a97c1c8c75c8346533db30432b7dd6",
   "network": "ARC-TESTNET",
   "deployerWalletId": "3c2464b2-8369-52e2-a782-800bbeca5396",
   "contract_code_path": "/home/user/app/contracts/ProoflineCampaigns.sol",
   "contract_compiled_code_path": "/home/user/app/contracts/out/ProoflineCampaigns.sol/ProoflineCampaigns.json",
   "contract_network_and_links": {
-    "Arc Testnet": "https://explorer.testnet.arc.io/address/0x433920fdc403317005eb8c5dcf9a43a153243528"
+    "Arc Testnet": "https://explorer.testnet.arc.io/address/0x3b43a325b5a97c1c8c75c8346533db30432b7dd6"
   },
   "contract_deployments": [
+    {
+      "chain": "Arc Testnet",
+      "address": "0x3b43a325b5a97c1c8c75c8346533db30432b7dd6",
+      "explorerUrl": "https://explorer.testnet.arc.io/address/0x3b43a325b5a97c1c8c75c8346533db30432b7dd6",
+      "txHash": "0xcc1827b8c9b713568ca329882ccd30d8d9fd8626dd74c8a70726ddd8ff75799a",
+      "deployedAt": "2026-11-06T22:17:36.888Z"
+    },
     {
       "chain": "Arc Testnet",
       "address": "0x433920fdc403317005eb8c5dcf9a43a153243528",
@@ -455,6 +462,11 @@
       "type": "function",
       "name": "postRewarded",
       "inputs": [
+        {
+          "name": "campaignId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
         {
           "name": "postKey",
           "type": "bytes32",
@@ -1380,6 +1392,11 @@
       "type": "error",
       "name": "PostAlreadyRewarded",
       "inputs": [
+        {
+          "name": "campaignId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
         {
           "name": "postKey",
           "type": "bytes32",

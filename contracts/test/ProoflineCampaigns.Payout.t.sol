@@ -46,7 +46,7 @@ contract ProoflineCampaignsPayoutTest is ProoflineCampaignsTestBase {
         vm.expectEmit(true, true, true, true, address(pc));
         emit PC.PostRewarded(id, POST_1, COMMIT_A, creator, 1000, 500, 1_125_000);
         _pay(id, POST_1, COMMIT_A, 1000, 500);
-        assertTrue(pc.postRewarded(POST_1));
+        assertTrue(pc.postRewarded(id, POST_1));
         assertEq(pc.creatorPaid(id, COMMIT_A), 1_125_000);
     }
 
@@ -87,7 +87,7 @@ contract ProoflineCampaignsPayoutTest is ProoflineCampaignsTestBase {
         uint256 id2 = _minViewsCampaign();
         assertEq(pc.quote(id2, 999, 999), 0);
         _expectSend(abi.encodeWithSelector(PC.BelowMinViews.selector, id2, 999, 1000), _rep(id2, POST_1, COMMIT_A, 999, 999));
-        assertFalse(pc.postRewarded(POST_1)); // not consumed
+        assertFalse(pc.postRewarded(id2, POST_1)); // not consumed
     }
 
     function test_MinViews_AtThresholdPays() public {
@@ -105,7 +105,7 @@ contract ProoflineCampaignsPayoutTest is ProoflineCampaignsTestBase {
         assertEq(pc.quote(id, 0, 0), 0);
         assertEq(pc.quote(id, 0, 500), 0);
         _expectSend(abi.encodeWithSelector(PC.NothingToPay.selector, id), _rep(id, POST_1, COMMIT_A, 0, 100));
-        assertFalse(pc.postRewarded(POST_1));
+        assertFalse(pc.postRewarded(id, POST_1));
         assertEq(pc.creatorPaid(id, COMMIT_A), 0);
     }
 
@@ -195,20 +195,25 @@ contract ProoflineCampaignsPayoutTest is ProoflineCampaignsTestBase {
         assertEq(pc.remaining(id2), 0);
         assertEq(pc.totalEscrowed(), DEP); // id's deposit only
         _expectSend(abi.encodeWithSelector(PC.BudgetExhausted.selector, id2), _rep(id2, POST_2, COMMIT_B, 1000, 1000));
-        assertFalse(pc.postRewarded(POST_2));
+        assertFalse(pc.postRewarded(id2, POST_2));
         // topping up lets it resume
         vm.prank(sponsor);
         pc.fund(id2, 1_000_000);
         assertEq(_payAmount(id2, POST_2, COMMIT_B, 1000, 0), 1_000_000);
     }
 
-    // ───────────── global dedupe ─────────────
-    function test_PostKey_PaysOnceGloballyAcrossCampaigns() public {
+    // ───────────── per-campaign dedupe ─────────────
+    function test_PostKey_SameKeyInSecondCampaignSucceedsAndPays() public {
         uint256 id2 = _createDefault(DEP);
         _pay(id, POST_1, COMMIT_A, 1000, 0);
-        _expectSend(abi.encodeWithSelector(PC.PostAlreadyRewarded.selector, POST_1), _rep(id, POST_1, COMMIT_A, 1000, 0));
-        _expectSend(abi.encodeWithSelector(PC.PostAlreadyRewarded.selector, POST_1), _rep(id2, POST_1, COMMIT_B, 1000, 0));
-        assertEq(pc.creatorPaid(id2, COMMIT_B), 0);
+        // same key in a different campaign is a different (campaignId, postKey) pair
+        assertFalse(pc.postRewarded(id2, POST_1));
+        assertEq(_payAmount(id2, POST_1, COMMIT_B, 1000, 0), 1_000_000);
+        assertTrue(pc.postRewarded(id2, POST_1));
+        assertEq(pc.creatorPaid(id2, COMMIT_B), 1_000_000);
+        // a repeat inside the same campaign still reverts with the pair
+        _expectSend(abi.encodeWithSelector(PC.PostAlreadyRewarded.selector, id, POST_1), _rep(id, POST_1, COMMIT_A, 1000, 0));
+        _expectSend(abi.encodeWithSelector(PC.PostAlreadyRewarded.selector, id2, POST_1), _rep(id2, POST_1, COMMIT_B, 1000, 0));
     }
 
     // ───────────── report validation ─────────────
@@ -234,7 +239,7 @@ contract ProoflineCampaignsPayoutTest is ProoflineCampaignsTestBase {
         _expectSend(abi.encodeWithSelector(PC.InvalidReportLength.selector, 255), _slice(r, 255));
         _expectSend(abi.encodeWithSelector(PC.InvalidReportLength.selector, 288), _slice(abi.encodePacked(r, bytes32(0)), 288));
         _expectSend(abi.encodeWithSelector(PC.InvalidReportLength.selector, 0), "");
-        assertFalse(pc.postRewarded(POST_1));
+        assertFalse(pc.postRewarded(id, POST_1));
     }
 
     function _slice(bytes memory b, uint256 n) internal pure returns (bytes memory out) {
@@ -259,7 +264,7 @@ contract ProoflineCampaignsPayoutTest is ProoflineCampaignsTestBase {
         );
         // expiry == now is still valid
         _send(_reportBytes(3, id, POST_1, COMMIT_A, creator, 1000, 0, block.timestamp));
-        assertTrue(pc.postRewarded(POST_1));
+        assertTrue(pc.postRewarded(id, POST_1));
     }
 
     function test_Report_ZeroRecipient() public {

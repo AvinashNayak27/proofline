@@ -21,7 +21,7 @@ export const prooflineAbi = parseAbi([
   'function quote(uint256 id, uint256 uniqueViews, uint256 completions) view returns (uint256)',
   'function previewPayout(uint256 id, bytes32 creatorCommitment, uint256 uniqueViews, uint256 completions) view returns (uint256)',
   'function creatorPaid(uint256 campaignId, bytes32 creatorCommitment) view returns (uint256)',
-  'function postRewarded(bytes32 postKey) view returns (bool)',
+  'function postRewarded(uint256 campaignId, bytes32 postKey) view returns (bool)',
   'function nextCampaignId() view returns (uint256)',
   'function totalEscrowed() view returns (uint256)',
   'function owner() view returns (address)',

@@ -165,7 +165,7 @@ contract ProoflineCampaignsWorkflowStrictTest is WorkflowHelpers {
         uint256 id = _createDefault(10e6);
         metaStore = _md(keccak256("other"), WOWNER);
         _expectSend(_err(PC.InvalidWorkflowId.selector), _rep(id, POST_1, COMMIT_A, 1000, 0));
-        assertFalse(pc.postRewarded(POST_1));
+        assertFalse(pc.postRewarded(id, POST_1));
     }
 
     function test_Strict_WrongWorkflowOwner() public {

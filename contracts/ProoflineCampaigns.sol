@@ -127,7 +127,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
     uint256 public nextCampaignId = 1;
     uint256 public totalEscrowed;
     mapping(uint256 => Campaign) private campaigns;
-    mapping(bytes32 postKey => bool) public postRewarded;
+    mapping(uint256 campaignId => mapping(bytes32 postKey => bool)) public postRewarded;
     mapping(uint256 campaignId => mapping(bytes32 creatorCommitment => uint256)) public creatorPaid;
     bool public workflowIdentityLocked;
     address public reportSigner;
@@ -171,7 +171,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
     error InvalidRecipient();
     error InvalidPostKey();
     error InvalidCreatorCommitment();
-    error PostAlreadyRewarded(bytes32 postKey);
+    error PostAlreadyRewarded(uint256 campaignId, bytes32 postKey);
     /// @notice A report does not meet its campaign's minimum views.
     /// @param campaignId Campaign rejecting the report.
     /// @param uniqueViews Reported unique views.
@@ -219,7 +219,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
     /// @notice Records a paid post and its opaque creator commitment.
     /// @dev Contains no X handles, tweet text or World ID subjects; keys must be canonical off-chain.
     /// @param campaignId Campaign paying the reward.
-    /// @param postKey Globally unique opaque post key, consumed across all campaigns.
+    /// @param postKey Opaque post key unique per campaign; the same key may be rewarded once in each campaign.
     /// @param creatorCommitment Off-chain commitment to (application, World ID issuer, subject).
     /// @param recipient Report-bound payout wallet.
     /// @param uniqueViews Measured unique video views.
@@ -429,8 +429,9 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
     /// issuer, the whole report reverts and consumes nothing; the creator can resubmit with a different
     /// wallet. PostRewarded follows accounting and precedes the transfer; failed transfers revert logs too.
     /// Eligibility errors include campaign context; InputTooLarge includes the rejected metric and limit.
-    /// The workflow must supply canonical global post keys and stable creator commitments, never
-    /// X handles, tweet text or World ID subjects. Measurements, not amounts, are reported.
+    /// The workflow must supply canonical post keys unique per campaign and stable creator commitments,
+    /// never X handles, tweet text or World ID subjects. The same post key may be rewarded once in each
+    /// campaign. Measurements, not amounts, are reported.
     /// @param metadata At least 62 bytes if either workflow identity check is configured.
     /// @param report Exactly 321 bytes: the 256-byte abi.encode(uint8 schemaVersion, uint256 campaignId,
     /// bytes32 postKey, bytes32 creatorCommitment, address recipient, uint256 uniqueViews,
@@ -456,7 +457,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
         if (r.recipient == address(0)) revert InvalidRecipient();
         if (r.postKey == bytes32(0)) revert InvalidPostKey();
         if (r.creatorCommitment == bytes32(0)) revert InvalidCreatorCommitment();
-        if (postRewarded[r.postKey]) revert PostAlreadyRewarded(r.postKey);
+        if (postRewarded[r.campaignId][r.postKey]) revert PostAlreadyRewarded(r.campaignId, r.postKey);
         if (r.uniqueViews > MAX_METRIC) revert InputTooLarge(r.uniqueViews, MAX_METRIC);
         if (r.completions > MAX_METRIC) revert InputTooLarge(r.completions, MAX_METRIC);
         if (r.uniqueViews < c.minViews) revert BelowMinViews(r.campaignId, r.uniqueViews, c.minViews);
@@ -469,7 +470,7 @@ contract ProoflineCampaigns is IReceiver, ERC165, Ownable2Step, Pausable, Reentr
         uint256 amount = previewPayout(r.campaignId, r.creatorCommitment, r.uniqueViews, r.completions);
         if (amount == 0) revert NothingToPay(r.campaignId);
 
-        postRewarded[r.postKey] = true;
+        postRewarded[r.campaignId][r.postKey] = true;
         c.paid += uint128(amount); // amount + paid <= deposited - withdrawn <= uint128.max.
         creatorPaid[r.campaignId][r.creatorCommitment] += amount;
         totalEscrowed -= amount;

@@ -36,7 +36,7 @@ contract ProoflineCampaignsSignatureTest is ProoflineCampaignsTestBase {
         assertEq(usdc.balanceOf(address(pc)), DEP);
         assertEq(pc.totalEscrowed(), DEP);
         assertEq(pc.remaining(id), DEP);
-        assertFalse(pc.postRewarded(POST_1));
+        assertFalse(pc.postRewarded(id, POST_1));
         assertEq(pc.creatorPaid(id, COMMIT_A), 0);
     }
 
@@ -48,7 +48,7 @@ contract ProoflineCampaignsSignatureTest is ProoflineCampaignsTestBase {
         emit PC.PostRewarded(id, POST_1, COMMIT_A, creator, 1000, 0, 1_000_000);
         _send(rep);
         assertEq(usdc.balanceOf(creator), 1_000_000);
-        assertTrue(pc.postRewarded(POST_1));
+        assertTrue(pc.postRewarded(id, POST_1));
     }
 
     function test_Sig_ManySignaturesAllAccepted() public {
@@ -104,8 +104,8 @@ contract ProoflineCampaignsSignatureTest is ProoflineCampaignsTestBase {
         _expectSend(_bad(), abi.encodePacked(_body(3, id, POST_1, COMMIT_A, creator, 1000, 0, exp + 1), sig));
         assertEq(usdc.balanceOf(creator), 0);
         assertEq(pc.totalEscrowed(), 2 * DEP);
-        assertFalse(pc.postRewarded(POST_1));
-        assertFalse(pc.postRewarded(POST_2));
+        assertFalse(pc.postRewarded(id, POST_1));
+        assertFalse(pc.postRewarded(id, POST_2));
         assertEq(pc.creatorPaid(id, COMMIT_A), 0);
         assertEq(pc.creatorPaid(id2, COMMIT_A), 0);
         // the untampered pair is still valid (nothing was consumed)
@@ -242,7 +242,7 @@ contract ProoflineCampaignsSignatureTest is ProoflineCampaignsTestBase {
     function test_Sig_ReplayAfterPaymentRevertsAlreadyRewarded() public {
         bytes memory rep = _signed(_b(POST_1, creator, 1000));
         _send(rep);
-        _expectSend(abi.encodeWithSelector(PC.PostAlreadyRewarded.selector, POST_1), rep);
+        _expectSend(abi.encodeWithSelector(PC.PostAlreadyRewarded.selector, id, POST_1), rep);
         assertEq(usdc.balanceOf(creator), 1_000_000);
     }
 
@@ -320,7 +320,7 @@ contract ProoflineCampaignsSignatureTest is ProoflineCampaignsTestBase {
         assertEq(usdc.balanceOf(address(pc)), bal);
         assertEq(pc.totalEscrowed(), bal);
         assertEq(pc.remaining(id), DEP);
-        assertFalse(pc.postRewarded(POST_1));
+        assertFalse(pc.postRewarded(id, POST_1));
         // the brand can still recover everything
         uint256 b0 = usdc.balanceOf(brand);
         vm.prank(brand);

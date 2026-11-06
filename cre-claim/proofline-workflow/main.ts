@@ -67,7 +67,7 @@ export const onClaim = (enclave: TeeRuntime<Config>, payload: HTTPPayload): stri
   let campaign: ReturnType<typeof readCampaign> | undefined
   if (receiver) {
     const campaignRead = startCampaignRead(don, receiver, claim.campaignId)
-    const rewardedRead = startPostRewardedRead(don, receiver, key)
+    const rewardedRead = startPostRewardedRead(don, receiver, claim.campaignId, key)
     try {
       campaign = readCampaign(campaignRead)
     } catch {
