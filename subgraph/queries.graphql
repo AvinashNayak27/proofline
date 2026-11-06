@@ -1,0 +1,38 @@
+query RewardsForWallet($wallet: Bytes!) {
+  wallet(id: $wallet) {
+    id
+    totalEarned
+    rewardCount
+    rewards(orderBy: blockNumber, orderDirection: desc) {
+      id
+      campaignId
+      postKey
+      creatorCommitment
+      recipient
+      uniqueViews
+      completions
+      amount
+      blockNumber
+      timestamp
+      txHash
+    }
+  }
+}
+
+query RewardsForCreator($creatorCommitment: Bytes!) {
+  creator(id: $creatorCommitment) {
+    id
+    totalEarned
+    rewardCount
+    rewards(orderBy: blockNumber, orderDirection: desc) {
+      campaignId
+      postKey
+      recipient
+      uniqueViews
+      completions
+      amount
+      blockNumber
+      txHash
+    }
+  }
+}

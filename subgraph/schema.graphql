@@ -1,0 +1,54 @@
+type Campaign @entity(immutable: true) {
+  id: ID!
+  brand: Bytes!
+  brandName: String!
+  title: String!
+  brief: String!
+  requiredTag: String!
+  link: String!
+  startsAt: BigInt!
+  endsAt: BigInt!
+  minViews: BigInt!
+  bonusBps: BigInt!
+  cpmUsdc6: BigInt!
+  maxPerPost: BigInt!
+  maxPerCreator: BigInt!
+  requireProofCode: Boolean!
+  deposit: BigInt!
+  createdAt: BigInt!
+  createdBlock: BigInt!
+  createdTx: Bytes!
+  rewards: [Reward!]! @derivedFrom(field: "campaign")
+}
+
+type Reward @entity(immutable: true) {
+  id: Bytes!
+  campaign: Campaign!
+  campaignId: BigInt!
+  postKey: Bytes!
+  creator: Creator!
+  creatorCommitment: Bytes!
+  wallet: Wallet!
+  recipient: Bytes!
+  uniqueViews: BigInt!
+  completions: BigInt!
+  amount: BigInt!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  txHash: Bytes!
+  logIndex: BigInt!
+}
+
+type Wallet @entity(immutable: false) {
+  id: Bytes!
+  totalEarned: BigInt!
+  rewardCount: BigInt!
+  rewards: [Reward!]! @derivedFrom(field: "wallet")
+}
+
+type Creator @entity(immutable: false) {
+  id: Bytes!
+  totalEarned: BigInt!
+  rewardCount: BigInt!
+  rewards: [Reward!]! @derivedFrom(field: "creator")
+}

@@ -9,8 +9,9 @@
 // Secrets (WORLD_ID_CLIENT_SECRET, WORLD_ID_SESSION_SECRET) come from the environment and exist only
 // in this process. This file never logs request bodies, cookies, codes, tokens or headers.
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
-import { isAddress } from 'viem'
+import { isAddress, type Address } from 'viem'
 import { requiredTagFor } from './campaignChain'
+import { allCampaigns, allRewards, rewardsForWallet } from './rewardsSubgraph'
 import { ConfigError, createWorldAuth, loadConfig, parseCookies, type AuthErrorCode, type WorldAuth } from './worldAuth'
 
 const PORT = Number(process.env.AUTH_SERVER_PORT ?? 3001)
@@ -101,6 +102,28 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       acr: session.acr,
       expiresAt: session.expiresAt,
     })
+  }
+
+  if (path === '/api/rewards' && method === 'GET') {
+    const recipient = url.searchParams.get('recipient')
+    if (recipient && !isAddress(recipient)) return send(res, 400, { ok: false, error: 'invalid_recipient' })
+    if (!PROOFLINE_CONTRACT || !isAddress(PROOFLINE_CONTRACT) || !/^[0-9]{1,12}$/.test(PROOFLINE_DEPLOY_BLOCK ?? '')) {
+      return send(res, 503, { ok: false, error: 'not_configured' })
+    }
+    try {
+      const rewards = recipient ? await rewardsForWallet(recipient as Address) : await allRewards()
+      return send(res, 200, { ok: true, rewards })
+    } catch {
+      return send(res, 502, { ok: false, error: 'subgraph_unavailable' })
+    }
+  }
+
+  if (path === '/api/campaigns' && method === 'GET') {
+    try {
+      return send(res, 200, { ok: true, campaigns: await allCampaigns() })
+    } catch {
+      return send(res, 502, { ok: false, error: 'subgraph_unavailable' })
+    }
   }
 
   if (path === '/api/auth/world/login' && method === 'GET') {

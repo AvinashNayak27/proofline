@@ -1,20 +1,19 @@
 import { ConnectKitButton } from 'connectkit'
 import { Wallet } from 'lucide-react'
-import { useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { RewardsList } from '@/components/campaigns/RewardsList'
 import { Usdc } from '@/components/campaigns/Usdc'
 import { Button, LinkButton } from '@/components/ui/Button'
 import { EmptyState, Notice, Skeleton } from '@/components/ui/Feedback'
 import { Stat } from '@/components/ui/Stat'
-import { useRewards } from '@/hooks/useProofline'
+import { useWalletRewards } from '@/hooks/useProofline'
 import { PROOFLINE_CONTRACT } from '@/lib/proofline/config'
 import { count } from '@/lib/proofline/format'
 
 export function Rewards() {
   const { address, isConnected } = useAccount()
-  const { data, isPending, isError } = useRewards()
-  const mine = useMemo(() => (data ?? []).filter((r) => address && r.recipient.toLowerCase() === address.toLowerCase()), [data, address])
+  const { data, isPending, isError } = useWalletRewards(address)
+  const mine = data ?? []
   const total = mine.reduce((sum, r) => sum + r.amount, 0n)
 
   return (

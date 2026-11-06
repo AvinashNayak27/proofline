@@ -48,6 +48,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api/auth': { target: authServer, changeOrigin: true },
         '/api/claims': { target: authServer, changeOrigin: true },
+        '/api/rewards': { target: authServer, changeOrigin: true },
+        '/api/campaigns': { target: authServer, changeOrigin: true },
         '/cre/trigger': { target: authServer, changeOrigin: true },
       },
     },

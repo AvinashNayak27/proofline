@@ -1,0 +1,46 @@
+[
+  {
+    "type": "event",
+    "name": "CampaignCreated",
+    "anonymous": false,
+    "inputs": [
+      { "name": "id", "type": "uint256", "indexed": true },
+      { "name": "brand", "type": "address", "indexed": true },
+      {
+        "name": "data",
+        "type": "tuple",
+        "indexed": false,
+        "components": [
+          { "name": "brandName", "type": "string" },
+          { "name": "title", "type": "string" },
+          { "name": "brief", "type": "string" },
+          { "name": "requiredTag", "type": "string" },
+          { "name": "link", "type": "string" },
+          { "name": "startsAt", "type": "uint64" },
+          { "name": "endsAt", "type": "uint64" },
+          { "name": "minViews", "type": "uint32" },
+          { "name": "bonusBps", "type": "uint16" },
+          { "name": "cpmUsdc6", "type": "uint96" },
+          { "name": "maxPerPost", "type": "uint96" },
+          { "name": "maxPerCreator", "type": "uint96" },
+          { "name": "requireProofCode", "type": "bool" },
+          { "name": "deposit", "type": "uint256" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "PostRewarded",
+    "anonymous": false,
+    "inputs": [
+      { "name": "campaignId", "type": "uint256", "indexed": true },
+      { "name": "postKey", "type": "bytes32", "indexed": true },
+      { "name": "creatorCommitment", "type": "bytes32", "indexed": true },
+      { "name": "recipient", "type": "address", "indexed": false },
+      { "name": "uniqueViews", "type": "uint256", "indexed": false },
+      { "name": "completions", "type": "uint256", "indexed": false },
+      { "name": "amount", "type": "uint256", "indexed": false }
+    ]
+  }
+]

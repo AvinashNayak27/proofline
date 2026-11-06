@@ -1,0 +1,15 @@
+{
+  "name": "proofline-subgraph",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-ts": "^0.38.1"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.98.1"
+  }
+}
