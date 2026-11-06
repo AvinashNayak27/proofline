@@ -7,5 +7,5 @@
   "host_permissions": ["https://x.com/i/api/graphql/*"],
   "background": { "service_worker": "dist/background.js", "type": "module" },
   "action": { "default_title": "X Analytics Attester" },
-  "externally_connectable": { "matches": ["http://localhost:5173/*"] }
+  "externally_connectable": { "matches": ["http://localhost:5173/*", "https://i0sr6ifstg1gai9k5yzas.preview.studio.arc.io/*"] }
 }

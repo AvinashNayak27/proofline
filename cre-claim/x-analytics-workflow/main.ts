@@ -20,7 +20,7 @@ export const onClaim = (enclave: TeeRuntime<Config>, payload: HTTPPayload): stri
   if (!capture) return reject('session_unreadable')
   const metrics = replay(enclave,capture,req.postId)
   if (typeof metrics === 'string') return reject(metrics)
-  if (metrics.amountUsdc6 === 0n) return reject('no_completions')
+  if (metrics.amountUsdc6 === 0n) return reject('no_views')
   if (metrics.amountUsdc6 > BigInt(enclave.config.maxClaimAmountUsdc6)) return reject('amount_over_cap')
   const receiver = (enclave.config.mode === 'production' ? enclave.config.receiver : '0x0000000000000000000000000000000000000000') as Address
   const cid = claimId(receiver,req)

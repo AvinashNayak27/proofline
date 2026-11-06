@@ -51,8 +51,10 @@ chrome.webRequest.onBeforeSendHeaders.addListener((d) => {
     await putState({ ready: { postId: p.postId, encryptedSessionMaterial: seal({ url: d.url, headers }, p), tabId: p.tabId } })
   })().catch(() => {})
 }, { urls: ['https://x.com/i/api/graphql/*'] }, ['requestHeaders', 'extraHeaders'])
+// Pages allowed to talk to this extension. Keep in sync with externally_connectable in manifest.json.
+const ALLOWED_APP_ORIGINS = ['http://localhost:5173/', 'https://i0sr6ifstg1gai9k5yzas.preview.studio.arc.io/']
 chrome.runtime.onMessageExternal.addListener((m, sender, send) => {
-  if (!sender.url?.startsWith('http://localhost:5173/')) return
+  if (!ALLOWED_APP_ORIGINS.some((origin) => sender.url?.startsWith(origin))) return
   void (async () => {
     if (m?.type === 'CAPTURE_STATUS') { const s = await getState(); send({ ok: true, ready: !!s.ready, postId: s.ready?.postId }); return }
     if (m?.type === 'GET_CAPTURE') {

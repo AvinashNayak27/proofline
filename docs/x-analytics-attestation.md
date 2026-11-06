@@ -2,7 +2,7 @@
 
 The page accepts an X post link, signs a post-specific EIP-712 intent, and asks the unpacked extension to open `/analytics`. The extension captures that tab’s `TweetActivityQuery`, encrypts the request URL and session headers for the enclave key, and sends only ciphertext back to the page. The page posts that ciphertext and signed intent to `/cre/trigger`. The dedicated `x-analytics-workflow` decrypts in `handlerInTee`, checks the request is for the signed post, replays it to `https://x.com`, and extracts `UniqueVideoViews` and `VideoCompletions`.
 
-Reward is `VideoCompletions / 1000` USDC. The contract takes 6-decimal units, so 104 completions encode as 104000 units = **0.104 USDC**. `UniqueVideoViews` is displayed, but does not alter payout. The existing `ArcClaimReceiver` is reused. Its `claimedUser` mapping now tracks a commitment to the post ID, limiting this demo to one reward per post. Its 5 USDC per-claim cap and total budget still apply.
+Reward: `retention = min(VideoCompletions / UniqueVideoViews, 1)` and `drop = min(5 USDC, (UniqueVideoViews / 1000) × (1 + 0.5 × retention²))`. A missing metric or missing `metric_value` counts as 0, and a post with 0 unique views earns nothing. The workflow computes it in 6-decimal units with integer math, rounded down: 1,000 views with 500 completions give 1.125 USDC, and 1,000 views with 1,000 completions give 1.5 USDC. The existing `ArcClaimReceiver` is reused. Its `claimedUser` mapping now tracks a commitment to the post ID, limiting this demo to one reward per post. Its 5 USDC per-claim cap and total budget still apply.
 
 ## Local setup
 

@@ -87,7 +87,7 @@ export function FundPool() {
         <p className="mt-2 text-xs" style={{ color: 'var(--danger)' }}>The transfer failed. Check your USDC balance and try again.</p>
       ) : null}
       <p className="mt-2 text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
-        Optional Arc Testnet transfer to the existing receiver. Each video completion pays 0.001 USDC, subject to the receiver budget and per-claim cap.
+        Optional Arc Testnet transfer to the existing receiver. Each claim pays up to 5 USDC based on unique video views and completion rate, subject to the receiver budget and per-claim cap.
       </p>
     </section>
   )

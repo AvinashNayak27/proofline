@@ -44,7 +44,7 @@ export function ClaimCard() {
     try {
       setPhase('Switching to Arc Testnet')
       if (chainId !== arcTestnet.id) await switchChainAsync({chainId:arcTestnet.id})
-      const nonce = `0x${Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('')}` as Hex
+      const nonce = `0x${Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('')}`
       const expiry = BigInt(Math.floor(Date.now()/1000)+600)
       setPhase('Sign the post claim in your wallet')
       const signature = await signTypedDataAsync({domain,types,primaryType:'ClaimIntent',message:{application:'x-analytics-arc-v1',chainId:BigInt(arcTestnet.id),postId,wallet:address,nonce,expiry}})
@@ -78,7 +78,7 @@ export function ClaimCard() {
     } catch (e) { setPhase(''); setError(e instanceof Error ? e.message : 'The claim failed.') }
   }
   return <section className="rounded-3xl p-5 space-y-4" style={{background:'var(--surface-strong)',border:'1px solid var(--border)'}}>
-    <div><p className="text-xs font-semibold uppercase" style={{color:'var(--muted)'}}>Arc Testnet · X analytics</p><h2 className="display text-2xl font-bold">Get views and claim</h2><p className="text-sm" style={{color:'var(--muted)'}}>Unique video views are shown as evidence. Video completions ÷ 1000 sets the USDC reward. One claim per post.</p></div>
+    <div><p className="text-xs font-semibold uppercase" style={{color:'var(--muted)'}}>Arc Testnet · X analytics</p><h2 className="display text-2xl font-bold">Get views and claim</h2><p className="text-sm" style={{color:'var(--muted)'}}>Reward = unique video views ÷ 1000 USDC, boosted up to 1.5× by how many viewers finish the video (capped at 5 USDC). A post with no video metrics counts as 0. One claim per post.</p></div>
     <label className="block text-sm font-semibold">Your post link<input className="mt-2 w-full rounded-xl border p-3 font-normal" placeholder="https://x.com/you/status/1234567890" value={link} onChange={e=>setLink(e.target.value)} /></label>
     <ConnectKitButton.Custom>{({show})=><button onClick={show} className="rounded-xl border px-4 py-2 text-sm">{isConnected && address ? `${address.slice(0,6)}…${address.slice(-4)}` : 'Connect wallet'}</button>}</ConnectKitButton.Custom>
     <button onClick={()=>void getViews()} disabled={!isConnected || !!phase} className="w-full rounded-xl px-4 py-3 font-semibold text-white disabled:opacity-40" style={{background:'var(--accent)'}}>{phase || 'Get views'}</button>
